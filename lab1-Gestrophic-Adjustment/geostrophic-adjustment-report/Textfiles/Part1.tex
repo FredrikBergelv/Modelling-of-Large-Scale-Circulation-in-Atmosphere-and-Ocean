@@ -16,7 +16,7 @@ where $u$ and $v$ are the horizontal velocity components in the $x$ and $y$ dire
     \label{fig:sketch}
 \end{figure}
 
-\textbf{(ii)} So the initial perturbation is a physical unstable state, which will start to move. The movement will start as a zonally, but it will start to turn due to the presence of the Coriolis force. Thus, a meridional wind will start to grow. This meridional wind can balance a certain amount of zonal height difference. Thus after a while the system will reach a steady state where the meridional flow will balance the remaining of the zonal height difference. The rest of the energy that moved away zonally will be 'energy lost' to the local system. 
+\textbf{(ii)} So the initial perturbation is a physical unstable state, which will start to move. The movement will start as a zonal, but it will start to turn due to the presence of the Coriolis force. Thus, a meridional wind will start to grow. This meridional wind can balance a certain amount of zonal height difference. Thus after a while the system will reach a steady state where the meridional flow will balance the remaining of the zonal height difference. The rest of the energy that moved away zonally will be 'lost energy', for the local system. 
 
 The change in potential energy of the system is given by
 \begin{equation}
@@ -72,7 +72,7 @@ Using this solution one can see that the zonal velocity is given $u(x,t\rightarr
     v(x,t\rightarrow\infty) = -\frac{g}{f}\frac{\partial \eta}{\partial x} = -\frac{g\eta_0}{f R} e^{-|x|/R}.
     \label{eq:solv}
 \end{equation}
-Note that the solutions are uniform in $y$, and will thus not depend on the variable.
+Note that the solutions are uniform in $y$, and will thus not depend on the variable. Above $g$ is the gravitational acceleration, $\eta_0$ is the initial height difference from the mean depth, $f$ is the Coriolis parameter, and $R$ is the Rossby radius of deformation. 
 
 \textbf{(iv)} Observing \autoref{eq:solh} and \autoref{eq:solv} one can see that the solution is a function of the Rossby radius of deformation $R$. The Rossby radius of deformation is a length scale that characterizes the balance between the Coriolis force and the buoyancy due to the free surface height. The parameter $R$ is defined as $$R = \sqrt{gH}/f.$$ Since both \autoref{eq:solh} and \autoref{eq:solv} is proportional to $\propto e^{1/R}$, the Rossby radius will influence the extent of the solution. A larger Rossby radius will thus result in a larger distance needed to reach the boundary values of $\pm\eta_0$. Thus after a distance $x=R$ the solution will be 
 \begin{equation}
@@ -80,4 +80,4 @@ Note that the solutions are uniform in $y$, and will thus not depend on the vari
 \end{equation}
 Thus increasing the depth by $4H$ or decreasing the Coriolis parameter by $\tfrac{1}{2}f$, would yield the same amount of broadening to the system. The gravity $g$ is also a parameter in the Rossby radius, but it is usually considered a constant. 
 
-Finally the initial perturbation of $\eta_0$ will also affect the solution, as the limit when $x\rightarrow\pm\infty$ is approached. Consequently, this will equally scale the meridional velocity $v$ since $v\propto\eta_0$. However $v$ is also directly dependent as $v\propto\tfrac{1}{fR}$, which means that $v\propto\tfrac{1}{\sqrt{H}}$ but not dependent on $f$. Thus, varying the Coriolis parameter should vary the spread of the meridional velocity, but not the max speed. Furthermore, varying the depth will also vary the spread, but also the the size of the max speed $\abs{v}$.  
+Finally the initial perturbation of $\eta_0$ will also affect the solution, as the limit when $x\rightarrow\pm\infty$ is approached. Consequently, this will equally scale the meridional velocity $v$ since $v\propto\eta_0$. However $v$ is also directly dependent as $v\propto\tfrac{1}{fR}$, which means that $v\propto\tfrac{1}{\sqrt{H}}$ but not dependent on $f$. Thus, varying the Coriolis parameter should vary the spread of the meridional velocity, but not the magnitude. Furthermore, varying the depth will also vary the spread, but also the the size of the magnitude $\abs{v}$.  

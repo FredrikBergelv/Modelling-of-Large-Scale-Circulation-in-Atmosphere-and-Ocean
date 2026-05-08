@@ -4,23 +4,27 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
 # Load data
-h_ds = xr.open_dataset('data_gaussian/h.nc')
-u_ds = xr.open_dataset('data_gaussian/u.nc')
-v_ds = xr.open_dataset('data_gaussian/v.nc')
+#h_ds = xr.open_dataset('data_gaussian/h.nc')
+#u_ds = xr.open_dataset('data_gaussian/u.nc')
+#v_ds = xr.open_dataset('data_gaussian/v.nc')
+
+h_ds = xr.open_dataset('data_normal/h.nc')
+u_ds = xr.open_dataset('data_normal/u.nc')
+v_ds = xr.open_dataset('data_normal/v.nc')
 
 h = h_ds["h"]
 u = u_ds["u"]
 v = v_ds["v"]
 
 # ---- Plotting settings ----
-times = [0, 1, 4, 5000]   # hours to plot
+times = [0, 2, 4.5, 5000]   # hours to plot
 
 Lx = float(h_ds.x.max())
 Ly = float(h_ds.y.max())
 minval = float(h.min())
 maxval = float(h.max())
 value_scale = 1
-norm = colors.PowerNorm(gamma=1, vmin=minval, vmax=maxval*0.5)
+#norm = colors.PowerNorm(gamma=1, vmin=minval, vmax=maxval)
 #norm = colors.SymLogNorm(linthresh=1.8, vmin=minval, vmax=maxval)
 
 # WE LOOK FOR THE GLOBAL MAXIMUM VELOCITY TO SCALE THE ARROWS PROPERLY
@@ -68,8 +72,7 @@ for i, t in enumerate(times):
     im = axs[i].imshow(
         h_t,
         origin="lower",
-        aspect="equal",
-        norm=norm,
+        aspect="equal", #norm=norm,
         cmap="ocean",
         extent=[0, Lx/1000, 0, Ly/1000]
         )
@@ -87,14 +90,14 @@ for i, t in enumerate(times):
 
 
 # colorbar
-cbar =fig.colorbar(im, ax=axs[len(times)], pad=0, fraction=1, shrink=0.8,  extend="both", label=r"$h(x,y,t)$ [m]")
+cbar =fig.colorbar(im, ax=axs[len(times)], pad=0, fraction=1, shrink=0.8,  extend="both", label=r"Height [m]")
 cbar.set_ticks([-1, 0, 1, 2, 3, 4, 5])
 axs[len(times)].axis("off")
 
-plt.suptitle(r"$h(x,y,t)$ at different times", size=14)
+plt.suptitle(r"$\eta(x,y,t)$ at Different Times", size=14)
 plt.tight_layout()
 
-plt.savefig("plots/timesteps_gaussian.png", dpi=300)
-plt.savefig("geostrophic-adjustment-report/Figures/timesteps_gaussian.png", dpi=300)
+plt.savefig("plots/timesteps.png", dpi=300)
+plt.savefig("geostrophic-adjustment-report/Figures/timesteps.png", dpi=300)
 
 plt.show()

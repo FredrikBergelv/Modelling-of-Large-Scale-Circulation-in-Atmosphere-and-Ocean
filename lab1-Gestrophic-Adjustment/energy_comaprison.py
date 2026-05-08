@@ -81,6 +81,12 @@ def theo_EP(R):
 def theo_EK(R):
     return 0.5*rho*g*eta0**2*R*Ly*(1 - np.exp(-Lx/R))
 
+
+def theo_EP_infty(R):
+    return -rho*g*eta0**2*R*Ly*(3/2)
+def theo_EK_infty(R):
+    return 0.5*rho*g*eta0**2*R*Ly
+
 for i, (h, u, v, h0, t, H,  f) in enumerate(cases):
     
     
@@ -116,6 +122,16 @@ for i, (h, u, v, h0, t, H,  f) in enumerate(cases):
     delEtot_theo = delEK_theo + delEP_theo
     Etot_theo = EP0_theo + delEtot_theo + t*0
     
+    
+    
+    # ---- infty Theoretical Energies ----
+    R = np.sqrt(g*H) / f
+    eta0 = 5
+    delEK_theo_infty = theo_EK_infty(R)
+    delEP_theo_infty = theo_EP_infty(R)
+    EK_theo_infty = t*0 + delEK_theo_infty
+    EP_theo_infty = t*0 + (EP0_theo + delEP_theo_infty)
+    
     if EP_theo[-1] < 0:
         EP_theo = t*0
         print("EP theo negative, setting to zero")
@@ -140,6 +156,9 @@ for i, (h, u, v, h0, t, H,  f) in enumerate(cases):
     axs[1, i].plot(t, EP*1e-18, color="C1", label="Potential")
     axs[1, i].plot(t, EK_theo*1e-18, color="darkblue", linestyle="--", label="Theo. kinetic steady state")
     axs[1, i].plot(t, EP_theo*1e-18, color="peru", linestyle="--", label="Theo. potential steady state")
+    
+    axs[1, i].plot(t, EK_theo_infty*1e-18, color="lightblue", linestyle="-.", label="Theo. infty kinetic steady state")
+    axs[1, i].plot(t, EP_theo_infty*1e-18, color="yellow", linestyle="-.", label="Theo. infty potential steady state")
     
     axs[1, i].grid(True, linestyle='--', alpha=0.6)
     axs[1, i].set_ylim(0, EP0*1e-18)
