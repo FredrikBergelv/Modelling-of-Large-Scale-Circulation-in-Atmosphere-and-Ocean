@@ -11,4 +11,4 @@ Numerical modelling projects developed as part of the large-scale atmosphere and
 The projects include numerical simulations in Fortran, visualisation scripts in Python, and short reports for analysing the model behaviour and physical interpretation.
 
 ## Author
-Fredrik Bergelv
+Fredrik Bergelv, Master’s student in Meteorology at Stockholm University
