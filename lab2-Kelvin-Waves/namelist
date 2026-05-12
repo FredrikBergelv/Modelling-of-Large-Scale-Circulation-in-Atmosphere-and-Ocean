@@ -1,0 +1,61 @@
+&ngrid
+!!
+Nx = 1500                  ! Number of x T points
+Ny = 1500                  ! Number of y T points
+!!
+Lx = 1.E7                ! Width of domain in x [m]  1.e6 = 1000 km
+Ly = 1.E7                ! Width of domain in y [m]  1.e6 = 1000 km
+!!
+Tm_d = 21.                ! Length of the run in days
+rfsave = 7                ! Timestep at which to save fields in hours.
+data_name = 'data'        ! Name of file
+/
+
+&nphysics
+!!
+D = 1000.               ! Average depth [m]
+g = 0.0981             ! gravity parameter
+!!
+l_coriolis = .TRUE.     ! Introduce rotation
+f0 = 1.E-4              ! Coriolis constant
+!!
+l_betaplane = .FALSE.    ! Do we want to override with equatorial beta-plane? 
+beta = 2.E-11           ! beta pane value f = 0 + beta*y
+/
+
+&ninitial
+!!
+h0 = 5.                     ! Amplitude of the perturbation
+!!
+l_gaussian = .TRUE.         ! Initial condition set as gaussian
+l_gaussian_south = .TRUE.   ! set gaussian at south border
+Lw = 10.                     ! Width of the gaussian L = Lw*width
+!!
+l_stepfunction = .FALSE. ! Initial condition set as step function in East - West
+/
+
+&nnumerics
+!!
+rcfl = 0.25             ! CFL criterion
+!!
+!! Filtering for Leapfrog scheme:
+gamma = 0.075           ! Asselin coefficient
+/
+
+&nboundaries
+!!
+l_solidbc = .FALSE.       ! Impose solid boundaries
+l_solidbc_south = .TRUE.  ! Impose solid boundaries only in south
+!!
+l_periodic = .TRUE.     ! Impose periodic boundaries
+l_up = .TRUE.           ! Periodic in E-W
+l_vp = .FALSE.          ! Periodic in N-S
+!!
+l_spongebc = .TRUE.    ! Introduce open conditions
+S  = 20                 ! Number of grid points in the sponge (if l_spongebc TRUE)
+btype = 1               ! 0 open BC everywhere, 1 open BC N-S, 2 open BC E-W
+!!
+l_write_uv = .FALSE.     ! Should we output U and V? (H is always writen)
+l_write_domain = .TRUE. ! If FALSE the netcdf will include the sponge
+l_alpha = .FALSE.       ! Save the sponge
+/
