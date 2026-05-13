@@ -4,10 +4,12 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.colors as colors
 
+data = "_baltic_fine"
+
 # --- Load data ---
-h_ds = xr.open_dataset('data/h.nc')
-u_ds = xr.open_dataset('data/u.nc')
-v_ds = xr.open_dataset('data/v.nc')
+h_ds = xr.open_dataset('data'+data+'/h.nc')
+u_ds = xr.open_dataset('data'+data+'/u.nc')
+v_ds = xr.open_dataset('data'+data+'/v.nc')
 
 h = h_ds["h"]
 u = u_ds["u"]
@@ -118,6 +120,6 @@ ani = animation.FuncAnimation(
 )
 
 # Save
-ani.save("plots/animation.gif", writer="pillow", fps=50)
+ani.save("plots/animation1.gif", writer="pillow", fps=50)
 
-print("Animation saved as 'plots/animation.gif'")
+print("Animation saved as 'plots/animation1.gif'")

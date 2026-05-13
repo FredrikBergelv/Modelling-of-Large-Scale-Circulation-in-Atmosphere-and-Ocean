@@ -121,7 +121,7 @@ for i, t in enumerate(times):
         rel_err = 100 * np.abs(c_num - c) / c
 
     print(
-        f"{t_old:.0f}" + r" \rightarrow " + f"{t_now:.0f} & "
+        f"{t_old:.0f}" + r" $\rightarrow$ " + f"{t_now:.0f} & "
         f"{x_peak/1000:.1f} & "
         f"{c_num:.2f} & "
         f"{c:.2f} & "
@@ -133,7 +133,7 @@ for i, t in enumerate(times):
 x_diff = x_old - Lx/2
 c_num = x_diff / (times[-1]*3600)
 rel_err = 100 * np.abs(c_num - c) / c
-print(f"0" + r"0\rightarrow " + f"{t_now:.0f} & "
+print(f"0" + r" $\rightarrow$ " + f"{t_now:.0f} & "
         f"{x_peak/1000:.1f} & "
         f"{c_num:.2f} & "
         f"{c:.2f} & "

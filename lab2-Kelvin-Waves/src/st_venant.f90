@@ -143,12 +143,12 @@ PROGRAM ST_VENANT
    sy = 0
 
    !! Redifining the size of the grid if using a sponge bc.
-   IF (l_spongebc .and. (btype == 0 .or. btype == 2)) THEN
-      Nx = Nx + S
-      sx = S/2
-   END IF
    IF (l_spongebc .and. (btype == 0 .or. btype == 1)) THEN
       Ny = Ny + S
+      sy = S/2
+   END IF
+   IF (l_spongebc .and. (btype == 0 .or. btype == 1) .and. l_gaussian_south) THEN
+      Ny = Ny + S/2
       sy = S/2
    END IF
 
@@ -639,7 +639,7 @@ PROGRAM ST_VENANT
          CALL APPLY_SOLID_BC()
       END IF
       IF (l_solidbc_south) THEN
-         CALL APPLY_SOLID_BC_south(jt_step=-1)
+         CALL APPLY_SOLID_BC_south()
       END IF
       IF (l_periodic) THEN
          CALL APPLY_PERIODIC_BC()
@@ -761,12 +761,12 @@ CONTAINS
       IF (present(jt_step)) jts = jt_step
 
       jtn = jts + 1  !: next time step
-
+      
       ! === Southern boundary:
       ! ======================
 
-      v_tmp(:, 0, jtn) = 0.   ! Solid wall
-      v_tmp(:, 0, jts) = 0.   ! Solid wall
+      v_tmp(:, 0:sy, jtn) = 0.   ! Solid wall
+      v_tmp(:, 0:sy, jts) = 0.   ! Solid wall
 
    END SUBROUTINE APPLY_SOLID_BC_south
 

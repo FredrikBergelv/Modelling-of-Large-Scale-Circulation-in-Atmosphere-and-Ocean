@@ -1,14 +1,14 @@
 &ngrid
 !!
-Nx = 1500                  ! Number of x T points
-Ny = 1500                  ! Number of y T points
+Nx = 300                 ! Number of x T points
+Ny = 300                 ! Number of y T points
 !!
 Lx = 1.E7                ! Width of domain in x [m]  1.e6 = 1000 km
 Ly = 1.E7                ! Width of domain in y [m]  1.e6 = 1000 km
 !!
 Tm_d = 21.                ! Length of the run in days
-rfsave = 7                ! Timestep at which to save fields in hours.
-data_name = 'data'        ! Name of file
+rfsave = 1                ! Timestep at which to save fields in hours.
+data_name = 'data_atlantic'        ! Name of file
 /
 
 &nphysics
@@ -28,7 +28,7 @@ beta = 2.E-11           ! beta pane value f = 0 + beta*y
 h0 = 5.                     ! Amplitude of the perturbation
 !!
 l_gaussian = .TRUE.         ! Initial condition set as gaussian
-l_gaussian_south = .TRUE.   ! set gaussian at south border
+l_gaussian_south = .TRUE.   ! move gaussian to south border
 Lw = 10.                     ! Width of the gaussian L = Lw*width
 !!
 l_stepfunction = .FALSE. ! Initial condition set as step function in East - West
@@ -52,10 +52,10 @@ l_up = .TRUE.           ! Periodic in E-W
 l_vp = .FALSE.          ! Periodic in N-S
 !!
 l_spongebc = .TRUE.    ! Introduce open conditions
-S  = 20                 ! Number of grid points in the sponge (if l_spongebc TRUE)
+S  = 20                   ! Number of grid points in the sponge (if l_spongebc TRUE)
 btype = 1               ! 0 open BC everywhere, 1 open BC N-S, 2 open BC E-W
 !!
-l_write_uv = .FALSE.     ! Should we output U and V? (H is always writen)
+l_write_uv = .TRUE.     ! Should we output U and V? (H is always writen)
 l_write_domain = .TRUE. ! If FALSE the netcdf will include the sponge
 l_alpha = .FALSE.       ! Save the sponge
 /

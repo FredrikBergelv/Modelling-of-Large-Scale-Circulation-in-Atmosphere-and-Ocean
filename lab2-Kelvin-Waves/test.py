@@ -1,198 +1,142 @@
+
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
-from load import load_data
+from load import give_all_data
 
-# =========================================================
-# Parameters
-# =========================================================
+#Global data
+g = 0.01*9.81
+times = [0, 150, 450, 50, 200, 250, 350]
 
-g = 0.01 * 9.81
-H = 1000
 
-times = [0, 24, 100, 150, 200]   # hours
-
-# =========================================================
 # Load data
-# =========================================================
-
-h, u, v = load_data("pacific")
-
-Lx = float(h.x.max())
-Ly = float(h.y.max())
-
-Nx = len(h.x)
-dx = Lx / Nx
-
-min_height = float(h.min())
-max_height = float(h.max())
-
-# =========================================================
-# Plot setup
-# =========================================================
-
-fig, axs = plt.subplots(
-    1,
-    len(times),
-    figsize=(3 * len(times), 5),
-    sharey=True
+atlantic, atlantic_fine, baltic, baltic_fine = give_all_data(
+    "atlantic",
+    "atlantic_fine",
+    "baltic",
+    "baltic_fine"
 )
 
-# =========================================================
-# Loop over times
-# =========================================================
+h_a,  u_a,  v_a  = atlantic
+h_af, u_af, v_af = atlantic_fine
+h_b,  u_b,  v_b  = baltic
+h_bf, u_bf, v_bf = baltic_fine
 
-for i, t in enumerate(times):
+cases = [[atlantic, 1000, "Atlantic"],
+         [atlantic_fine, 1000, "Atlantic fine grid"],
+         [baltic, 30, "Baltic"],
+         [baltic_fine, 30, "Baltic fine grid"]
+         ]
 
-    # ---------------------------------------------
-    # Select nearest time
-    # ---------------------------------------------
+def theo(x, c, t, Lx, Ly):    
+    Lx = Lx
+    Ly = Ly
+    f = 1e-4              # Coriolis parameter [1/s]
+    h0 = 5                # amplitude [m]
+    Lw = Lx / 10
+    R = c / f
+    y = 0
+    x = x * 1000 #convert to m
+    t = t*3600 # Convert to s
 
-    hnow = h.sel(time=t, method="nearest")
-    unow = u.sel(time=t, method="nearest")
-    vnow = v.sel(time=t, method="nearest")
+    # Wave center position (periodic)
+    x0 = (0.5 * Lx + c * t) % Lx
 
-    # ---------------------------------------------
-    # Equatorial section
-    # ---------------------------------------------
+    # Periodic distance
+    dx = x - x0
 
-    hx = hnow.sel(y=Ly/2, method="nearest")
+    # Wrap periodic distance
+    dx = (dx + Lx/2) % Lx - Lx/2
 
-    x = h.x.values
-    hx_vals = hx.values
+    # Kelvin-wave Gaussian
+    Gt = h0 * np.exp(-(dx**2) / (Lw**2)) * np.exp(-y / R)
 
-    x0 = Lx / 2
+    return Gt
+    
 
-    # =====================================================
-    # Kelvin wave (eastward)
-    # =====================================================
 
-    east_mask = x > x0
+# ===================== PLOTTING =====================
+linestyles = ["--", ":", "-."]
+ypos = [0.01, 0.05]   # y positions to plot
 
-    hx_east = hx_vals[east_mask]
-    x_east = x[east_mask]
+fig, axs = plt.subplots(2, len(times), figsize=(2.5*len(times), 5), sharey=True)
 
-    idx_kelvin = np.argmax(hx_east)
+# Loop
+for j, (dataset,H,name) in enumerate(cases):
+    h, u, v = dataset
+    
+    # Local data
+    c = np.sqrt(g*H)
+    Lx = float(h.x.max())
+    Ly = float(h.y.max())
+    min_speed = min(float(u.min()), float(v.min()))
+    max_speed = max(float(u.max()), float(v.max()))
+    min_height = float(h.min())
+    max_height = float(h.max())
+    
+    
+    for i, t in enumerate(times):
+    
+        # Select time and space
+        hnow = h.sel(time=t, method="nearest")
+        unow = u.sel(time=t, method="nearest")
+        vnow = v.sel(time=t, method="nearest")
+        
+        ht = hnow.sel(y=0, method="nearest")
+        ut = unow.sel(y=0, method="nearest")
+        vt = vnow.sel(y=0, method="nearest")
+        
+        # Convert to numpy arrays
+        hvals = ht.values
+        uvals = ut.values
+        vvals = vt.values
 
-    x_kelvin = x_east[idx_kelvin]
+        # Coordinates (convert to km)
+        xh = h.x.values / 1000
+        xu = u.x.values / 1000
+        xv = v.x.values / 1000
 
-    # =====================================================
-    # Rossby wave (westward)
-    # =====================================================
+        
+        # ---- h-section ----
+        if j==0 or j==1:
+            ax = axs[0, i]
+        if j==3 or j==2:
+            ax = axs[1, i]
+            
+        if i != 0:
+            ax.set_yticklabels([])
+            
+        # Title
+        actual_time = float(ht["time"].values)
+        if j==0:
+            ax.set_title(f"t = {actual_time:.1f} h")
+            
+        #x_pos = ((c * actual_time * 60 * 60 + Lx/2) % Lx) / 1000
+        #ax.axvline(x=x_pos, color="red", label=r"$x=ct$")
+        
+        h_theo= theo(xh, c, 0, Lx, Ly)
+        
+        if j==0 or j==2:
+            ax.plot(xh, h_theo, c=f"C4", label=fr"$\eta_{{\text{{theo.}}}}(x,0)$", linestyle="--", alpha=0.8)
+            
+        ax.plot(xh, ht, c=f"C{j}", label=fr"$\eta_{{\text{{{name}}}}}(x,0)$")
+        
 
-    west_mask = x < x0
-
-    hx_west = hx_vals[west_mask]
-    x_west = x[west_mask]
-
-    idx_rossby = np.argmax(hx_west)
-
-    x_rossby = x_west[idx_rossby]
-
-    # =====================================================
-    # Extract meridional cross sections
-    # =====================================================
-
-    ht_ke = hnow.sel(x=x_kelvin, method="nearest")
-    ht_ro = hnow.sel(x=x_rossby, method="nearest")
-
-    vt_ke = vnow.sel(x=x_kelvin, method="nearest")
-    vt_ro = vnow.sel(x=x_rossby, method="nearest")
-
-    # =====================================================
-    # Coordinates
-    # =====================================================
-
-    yh = h.y.values / 1000
-    yv = v.y.values / 1000
-
-    # =====================================================
-    # Diagnostics
-    # =====================================================
-
-    print(f"\nTime = {t} h")
-
-    print(
-        "Kelvin wave location:",
-        round(x_kelvin / 1000),
-        "km"
-    )
-
-    print(
-        "Rossby wave location:",
-        round(x_rossby / 1000),
-        "km"
-    )
-
-    print(
-        "max |v_kelvin| =",
-        np.max(np.abs(vt_ke.values))
-    )
-
-    print(
-        "max |v_rossby| =",
-        np.max(np.abs(vt_ro.values))
-    )
-
-    # =====================================================
-    # Plot
-    # =====================================================
-
-    ax = axs[i]
-
-    actual_time = float(hnow.time.values)
-
-    ax.set_title(f"t = {actual_time:.1f} h")
-
-    # Kelvin
-    ax.plot(
-        yh,
-        ht_ke.values,
-        lw=2,
-        c="C0",
-        label="Kelvin"
-    )
-
-    # Rossby
-    ax.plot(
-        yh,
-        ht_ro.values,
-        lw=2,
-        ls="--",
-        c="C1",
-        label="Rossby"
-    )
-
-    # Equator
-    ax.axvline(
-        Ly / 2000,
-        color="k",
-        lw=1,
-        alpha=0.4
-    )
-
-    ax.grid(True, linestyle="--", alpha=0.5)
-
-    ax.set_xlim(0, Ly / 1000)
-    ax.set_ylim(min_height, max_height)
-
-    ax.set_xlabel(r"$y$ [km]")
-
-    if i == 0:
-        ax.set_ylabel(r"$\eta$ [m]")
-        ax.legend()
-
-# =========================================================
-# Final layout
-# =========================================================
+        ax.set_ylim(min_height, max_height)
+        if i == 0:
+            ax.set_ylabel(r"Height [m]")
+            ax.legend()
+        ax.grid(True, linestyle='--', alpha=0.6)
+        
+        ax.set_ylim(-0.1, 5.1)
+        ax.set_xlim(0, Lx/1000)
+     
+        ax.set_xlabel(r"$x$ [km]")
+  
 
 plt.tight_layout(rect=[0, 0, 1, 0.93])
-
-plt.suptitle(
-    "Meridional Cross Sections of Kelvin and Rossby Waves",
-    fontsize=16
-)
-
-plt.savefig("plots/equatorial_cross_sections.png", dpi=300)
+plt.suptitle(r"Time Evolution of Surface Height at $y=0$", fontsize=16)
 
 plt.show()
+
+    

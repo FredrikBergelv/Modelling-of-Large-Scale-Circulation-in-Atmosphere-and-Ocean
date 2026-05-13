@@ -121,15 +121,7 @@ for j, (dataset,H,name) in enumerate(cases):
             
         ax.plot(xh, ht, c=f"C{j}", label=fr"$\eta_{{\text{{{name}}}}}(x,0)$")
         
-        """
-        for k, frac in enumerate(ypos):
-            y1 = Ly*frac
-            ht1 = hnow.sel(y=y1, method="nearest")
-            ut1 = unow.sel(y=y1, method="nearest")
-            vt1 = vnow.sel(y=y1, method="nearest")
-        
-            ax.plot(xh, ht1, c=f"C{j}", linestyle=linestyles[k], label=fr"$\eta(x, y={frac}L_y)$", alpha=0.3)
-        """
+
         ax.set_ylim(min_height, max_height)
         if i == 0:
             ax.set_ylabel(r"Height [m]")
