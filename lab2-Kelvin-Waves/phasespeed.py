@@ -83,11 +83,7 @@ for dataset, H, name in cases:
         x_peak = x_values[idx]
 
         # Theoretical peak
-        x_theo = np.linspace(0, Lx, 1000)
-        h_theo = theo(x_theo, c, t, Lx, Ly)
-
-        idx = np.argmax(h_theo)
-        x_theo_peak = x_theo[idx]
+        x_theo_peak = (0.5 * Lx + c * t * 3600) % (Lx)
 
         # Phase speed
         c_num = phase_diff(x_peak, x_theo_peak, c, t)

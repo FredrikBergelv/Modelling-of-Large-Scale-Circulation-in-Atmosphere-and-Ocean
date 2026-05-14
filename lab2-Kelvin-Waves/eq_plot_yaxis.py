@@ -17,6 +17,7 @@ Lx = float(h.x.max())
 Nx = len(h.values)
 dx = Lx/Nx
 Ly = float(h.y.max())
+Ly_min = float(h.y.min())
 min_speed = min(float(u.min()), float(v.min()))
 max_speed = max(float(u.max()), float(v.max()))
 min_height = float(h.min())
@@ -139,11 +140,13 @@ for i, t in enumerate(times):
     
     # Theo
     h0 = max(hvals_ke)
-    yh_theo = np.linspace(0,Ly/1000,1000)
+    yh_theo = np.linspace(Ly_min/1000,Ly/1000,1000)
     h_theo = theo_h(h0, x_kelvin, yh_theo, t)
     ax.plot(yh_theo, h_theo, c=f"darkblue", linestyle="--", label=r"$\eta_\text{theo. modified}\left(x_\text{Kelvin},y,\right)$")
     ax.plot(yh, ht_ro, c=f"C1", label=r"$\eta\left(x_\text{Rossby},y,\right)$", alpha=0.6)
     ax.plot(yh, ht_ke, c=f"C0", label=r"$\eta\left(x_\text{Kelvin},y,\right)$")
+    
+
 
     
     ax.set_ylim(min_height, max_height)
@@ -154,7 +157,7 @@ for i, t in enumerate(times):
         ax.set_yticklabels([])
     ax.grid(True, linestyle='--', alpha=0.6)
     
-    ax.set_ylim(min_height, max_height)
+    ax.set_ylim(-max_height*0.05, max_height)
     ax.set_xlim(0, Ly/1000)
     
     # ---- velocity-section ----
@@ -174,7 +177,7 @@ for i, t in enumerate(times):
         
     ax.grid(True, linestyle='--', alpha=0.6)
     
-    ax.set_ylim(min_speed, max_speed)
+    ax.set_ylim(-max_speed*0.05, max_speed)
     ax.set_xlim(0, Ly/1000)
      
     ax.set_xlabel(r"$y$ [km]")

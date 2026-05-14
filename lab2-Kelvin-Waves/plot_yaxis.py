@@ -30,7 +30,7 @@ cases = [[atlantic, 1000, "Atlantic"],
          [baltic_fine, 30, "Baltic fine grid"]
          ]
 
-def theo(h0, y, c, t, Lx, Ly):    
+def theo(h0, y, c, t, Lx, Ly, Ly_min):    
     Lx = Lx
     Ly = Ly
     f = 1e-4              # Coriolis parameter [1/s]
@@ -50,7 +50,7 @@ def theo(h0, y, c, t, Lx, Ly):
     #dx = (dx + Lx/2) % Lx - Lx/2
 
     # Kelvin-wave Gaussian
-    Gt = h0 * np.exp(-(dx**2) / (Lw**2)) * np.exp(-y / R)
+    Gt = h0 * np.exp(-(dx**2) / (Lw**2)) * np.exp(-np.abs(y-Ly_min) / R)
     
     return Gt 
 
@@ -92,6 +92,7 @@ for j, (dataset,H,name) in enumerate(cases):
     # Local data
     c = np.sqrt(g*H)
     Lx = float(h.x.max())
+    Ly_min = float(h.y.min())
     Nx = len(h.x.values)
     dx = float(Lx/Nx)
     Ly = float(h.y.max())
@@ -145,9 +146,9 @@ for j, (dataset,H,name) in enumerate(cases):
  
         # THEORY 
         if j==0 or j==2:
-            yh_theo = np.linspace(0,Ly/1000,1000)
-            h_theo = theo(h0, yh_theo, c, t, Lx, Ly)
-            ax.plot(yh_theo, h_theo/h0, c=f"C4", label=fr"$\eta_{{\text{{theo. modified.}}}}\left(x_\text{{p.}},y\right)$", linestyle="--", alpha=0.8)
+            yh_theo = np.linspace(Ly_min/1000,Ly/1000,1000)
+            h_theo = theo(h0, yh_theo, c, t, Lx, Ly, Ly_min)
+            ax.plot(yh_theo, h_theo/h0, c=f"C4", label=fr"$\eta_{{\text{{theo. modified}}}}\left(x_\text{{p.}},y\right)$", linestyle="--", alpha=0.8)
             
         ax.plot(yh, ht/h0, c=f"C{j}", label=fr"$\eta_{{\text{{{name}}}}}\left(x_\text{{p.}},y\right)$")
         
