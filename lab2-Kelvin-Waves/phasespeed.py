@@ -1,7 +1,7 @@
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
-from load import give_all_data
+from load import give_all_data, load_h_data
 
 # Global data
 g = 0.01 * 9.81
@@ -21,6 +21,18 @@ cases = [
     [baltic, 30, "Baltic"],
     [baltic_fine, 30, "Baltic fine grid"]
 ]
+
+ha_200 = load_h_data("atlantic_200")
+ha_600 = load_h_data("atlantic_600")
+hb_200 = load_h_data("baltic_200")
+hb_600 = load_h_data("baltic_600")
+
+
+cases = [[ha_200, 1000, "Atlantic"],
+         [ha_600, 1000, "Atlantic fine grid"],
+         [hb_200, 30, "Baltic"],
+         [hb_600, 30, "Baltic fine grid"]
+         ]
 
 def theo(x, c, t, Lx, Ly):    
     f = 1e-4              # Coriolis parameter [1/s]
@@ -45,7 +57,7 @@ def theo(x, c, t, Lx, Ly):
 
 
 def phase_diff(xmax, xmax_theo, c_theo, time):
-    x_diff = xmax_theo - xmax
+    x_diff = -xmax_theo + xmax
     c_diff = x_diff / (time * 3600)
     return c_theo + c_diff
 
@@ -62,7 +74,7 @@ results = []
 # =========================================================
 
 for dataset, H, name in cases:
-    h_da, u_da, v_da = dataset
+    h_da = dataset
 
     c = np.sqrt(g * H)
     Lx = float(h_da.x.max())
@@ -126,4 +138,5 @@ for name, t, c_num, c_theo, err in results:
 print(r"\hline")
 print(r"\end{tabular}")
 print(r"\caption{Kelvin wave phase speed: numerical vs theoretical comparison.}")
+print(r"\label{tab:coast}")
 print(r"\end{table}")

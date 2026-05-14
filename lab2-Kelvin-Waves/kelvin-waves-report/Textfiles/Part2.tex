@@ -1,71 +1,110 @@
 \section{Experiments}
 \subsection{Coastal Kelvin Waves}
+The coastal Kelvin waves simulations used two different oceans as a baseline. The Atlantic ocean used a grid size of 1e7$\times$1e7 \si{\meter\squared} and a mean depth of \SI{1000}{\meter}. The Baltic sea used a grid size of 1e6$\times$1e6 \si{\meter\squared} and a mean depth of \SI{30}{\meter}. The initial perturbation was in both cases a gaussian perturbation with a top height of \SI{5}{\meter} and a extent of 10\% of the domain. The perturbation was placed in the middle of the southern border, and can be seen in \autoref{fig:im}. Both oceans were also tested on two different grids, one with a grid size of 200$\times$200 and a finer on with 600$\times$600.
 
 \begin{figure}[H]
     \centering    
     \includegraphics[width=\textwidth]{Figures/im.png}
-    \caption{This figure...}
+    \caption{This figure shows the time evolution of the initial perturbation along the souther border.}
     \label{fig:im}
 \end{figure}
 
+\textbf{i,ii)} Calculating the phase speed of the different schemes, between different times, can be seen in \autoref{tab:coast}. There one can note a small, but present, difference between the numerical and theoretical phase speeds, where the numerical is always somewhat slower. The reason for this is due to the difference between a discretized computational phase speed and a theoretical one. Since the model uses a discretized staggered leapfrog scheme, the model is not identical to the theoretical equations and the numerical phase speed and the theoretical one are not the same.
 
-\begin{table}[h]
+\begin{table}[ht]
 \centering
 \begin{tabular}{lrrrr}
 \hline
 Case & Time (h) & $c_{num}$ & $c_{theo}$ & Rel. error (\%) \\
 \hline
-Atlantic & 0 $\rightarrow$ 1 & 12.8646 & 9.9045 & 29.89 \\
- & 0 $\rightarrow$ 10 & 10.7813 & 9.9045 & 8.85 \\
- & 0 $\rightarrow$ 24 & 11.4179 & 9.9045 & 15.28 \\
- & 0 $\rightarrow$ 168 & 10.5912 & 9.9045 & 6.93 \\
- & 0 $\rightarrow$ 336 & 10.6256 & 9.9045 & 7.28 \\
- & 0 $\rightarrow$ 504 & 10.5728 & 9.9045 & 6.75 \\
+Atlantic & 0 $\rightarrow$ 10 & 10.7639 & 9.9045 & 8.68 \\
+ & 0 $\rightarrow$ 24 & 8.5359 & 9.9045 & 13.82 \\
+ & 0 $\rightarrow$ 168 & 9.7760 & 9.9045 & 1.30 \\
+ & 0 $\rightarrow$ 336 & 9.8070 & 9.9045 & 0.99 \\
+ & 0 $\rightarrow$ 504 & 9.8035 & 9.9045 & 1.02 \\
 \hline
-Atlantic fine grid & 0 $\rightarrow$ 1 & 16.3367 & 9.9045 & 64.94 \\
- & 0 $\rightarrow$ 10 & 10.2026 & 9.9045 & 3.01 \\
- & 0 $\rightarrow$ 24 & 10.7910 & 9.9045 & 8.95 \\
- & 0 $\rightarrow$ 168 & 10.5705 & 9.9045 & 6.72 \\
- & 0 $\rightarrow$ 336 & 10.5877 & 9.9045 & 6.90 \\
- & 0 $\rightarrow$ 504 & 10.5705 & 9.9045 & 6.72 \\
+Atlantic fine grid & 0 $\rightarrow$ 10 & 11.4583 & 9.9045 & 15.69 \\
+ & 0 $\rightarrow$ 24 & 9.5968 & 9.9045 & 3.11 \\
+ & 0 $\rightarrow$ 168 & 9.8173 & 9.9045 & 0.88 \\
+ & 0 $\rightarrow$ 336 & 9.8139 & 9.9045 & 0.92 \\
+ & 0 $\rightarrow$ 504 & 9.8173 & 9.9045 & 0.88 \\
 \hline
-Baltic & 0 $\rightarrow$ 1 & 2.7366 & 1.7155 & 59.52 \\
- & 0 $\rightarrow$ 10 & 1.7875 & 1.7155 & 4.20 \\
- & 0 $\rightarrow$ 24 & 1.8203 & 1.7155 & 6.11 \\
- & 0 $\rightarrow$ 168 & 1.8258 & 1.7155 & 6.43 \\
- & 0 $\rightarrow$ 336 & 1.8279 & 1.7155 & 6.55 \\
- & 0 $\rightarrow$ 504 & 1.8304 & 1.7155 & 6.70 \\
+Baltic & 0 $\rightarrow$ 10 & 1.9097 & 1.7155 & 11.32 \\
+ & 0 $\rightarrow$ 24 & 1.7216 & 1.7155 & 0.36 \\
+ & 0 $\rightarrow$ 168 & 1.7051 & 1.7155 & 0.61 \\
+ & 0 $\rightarrow$ 336 & 1.7061 & 1.7155 & 0.55 \\
+ & 0 $\rightarrow$ 504 & 1.7092 & 1.7155 & 0.37 \\
 \hline
-Baltic fine grid & 0 $\rightarrow$ 1 & 3.0838 & 1.7155 & 79.76 \\
- & 0 $\rightarrow$ 10 & 1.6834 & 1.7155 & 1.88 \\
- & 0 $\rightarrow$ 24 & 1.7190 & 1.7155 & 0.21 \\
- & 0 $\rightarrow$ 168 & 1.7190 & 1.7155 & 0.21 \\
- & 0 $\rightarrow$ 336 & 1.7187 & 1.7155 & 0.19 \\
- & 0 $\rightarrow$ 504 & 1.7177 & 1.7155 & 0.12 \\
+Baltic fine grid 0 $\rightarrow$ 10 & 2.0255 & 1.7155 & 18.07 \\
+ & 0 $\rightarrow$ 24 & 1.7120 & 1.7155 & 0.21 \\
+ & 0 $\rightarrow$ 168 & 1.7120 & 1.7155 & 0.21 \\
+ & 0 $\rightarrow$ 336 & 1.7123 & 1.7155 & 0.19 \\
+ & 0 $\rightarrow$ 504 & 1.7134 & 1.7155 & 0.12 \\
 \hline
 \end{tabular}
-\caption{Kelvin wave phase speed: numerical vs theoretical comparison.}
+\caption{Coastal Kelvin wave phase speeds.}
+\label{tab:coast}
 \end{table}
+\newpage
+According to \citet{Doos2022} the theoretical and numerical phase speed for the shallow water equations discretized on an Arakawa C-grid are related as 
+\begin{equation}
+    \frac{c_\text{num}}{c_\text{theo}}=\pm\frac{1}{k\mu\Delta x}\arcsin\left[2\mu\sin\left(\frac{k\Delta x}{2}\right)\right].
+    \label{eq:phase}
+\end{equation}
+Above $\mu$ is the Courant number, $k$ is the wave number and $\Delta x=\Delta y$ is the size of each grid box. Thus, by increasing the grid size, the ratio of $\tfrac{c_\text{num}}{c_\text{theo}}\rightarrow1$. This can be seen for the two different oceans in \autoref{fig:phase}. One can observe that the Baltic sea converges faster then the Atlantic. This can be explained by \autoref{eq:phase} and the Courant number defined as 
+$$\mu\equiv c\frac{\Delta x}{\Delta t}.$$
+Since the Baltic sea is a smaller sea, the same grid size corresponds to smaller grid boxes, i.e. a smaller Courant number, and thus a better computational phase speed. This also explains why increasing the grid size for the Baltic sea in \autoref{tab:coast} led to a more accurate result.
 
 \begin{figure}[H]
     \centering    
     \includegraphics[width=0.5\textwidth]{Figures/phase.png}
-    \caption{This figure...}
+    \caption{This figure shows the ratio between the numerical and theoretical phase speed for the two oceans for different grid sizes. The shaded regions show the spread of the phase speeds by one standard deviation. The actual points are the phase speed calculated between the hour 0 and 504. }
     \label{fig:phase}
 \end{figure}
 
+\textbf{iii)} The meridional cross-section of the solution with the initial condition and theoretical solution can be seen in \autoref{fig:y}. The theoretical solution is labelled $\eta_\text{theo. modified}$ since the computational phase speed difference had been accounted for. Furthermore, since the solution also dropped in initial height (as can be seen in both \autoref{fig:im} and \autoref{fig:x}), the relative height decrease from the maximum $h$-value is shown. 
 
+One interesting observation that can be seen here in \autoref{fig:y} but also in \autoref{fig:im}, is that the initial perturbation is split up into an geostrophic-high part and a coastal Kelvin wave part. Thus, as only the coastal Kelvin wave part propagates, it needs to propagate away from the geostrophic-high for us to be able to analyze the exponential decay of the Kelvin wave. In \autoref{fig:y}, the left most column shows the initial stage, where both parts are present. The middle column shows a stage where parts of the Kelvin wave are past the geostrophic-high. 
+
+However, in the rightmost column one can observe when the Kelvin waves has propagated away from the geostrophic high. Comparing this with the expected theoretical decay of 
+$$\eta \propto e^{-\frac{y}{R}}$$
+shows a very good agreement with the expected output. Thus the numerical models behave as expected in their decay from the coast.
 
 \begin{figure}[H]
-    \centering    \includegraphics[width=\textwidth]{Figures/yaxis.png}
-    \caption{This figure...}
+    \centering    
+    \includegraphics[width=0.7\textwidth]{Figures/yaxis.png}
+    \caption{This figure shows the decay of the numerical solutions from the coast together with the initial conditions (left column) and the modified theoretical solution. The middle column show the decay when the Kelvin waves has not yet fully propagated away from the geostrophic high, and the rightmost column show when the Kelvin waves have propagated aay from the geostrophic high.}
     \label{fig:y}
 \end{figure}
 
+\textbf{iv)} The dependence on the resolution in \autoref{fig:y} is very hard to see since the change is very close to the wave compared to the entire domain. One can thus look very close to the wave, and also account for the smallest length scale of the domain. Doing this for manny different grid sizes gives \autoref{fig:yaxis_grids}, where one can see that the decay is actually faster then the theoretical one. This can be explained by the presence of small scale dissipation in the model, that increases the speed of the decay. Thus higher resolution gives more accurate decay. 
 
 \begin{figure}[H]
-    \centering    \includegraphics[width=\textwidth]{Figures/xaxis.png}
-    \caption{This figure...}
+    \centering    
+    \includegraphics[width=0.5\textwidth]{Figures/yaxis_grids.png}
+    \caption{This figure shows the decay of the numerical solutions from the coast for a both of different grid sizes. Note that the $x$-axis is a normalized quantity over the min(Lx) to highlight the decay differences.}
+    \label{fig:yaxis_grids}
+\end{figure}
+
+\textbf{v)} The zonal cross-section at the coast can be seen in \autoref{fig:x} together with the theoretical solution. This shows a gaussian shape initial perturbation that moves to the East with time. Furthermore, the shape seems to loose some height as time passes on. 
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[width=\textwidth]{Figures/xaxis.png}
+    \caption{This figure shows the zonal propagation of the Kelvin waves in the two oceans. The theoretical solution is showed as a dotted line, and the initial conditions can also be seen.}
     \label{fig:x}
 \end{figure}
+
+
+\textbf{vi)} The change of the numerical Kelvin wave for different resolutions can be seen in \autoref{fig:x_grids}. There one can see that even the courser grids do a pretty good job of mirroring the theoretical solution. However there are some minor differences. As shown earlier in \autoref{tab:coast} one could see that the phase speed of the wave was slightly worsened for the courser grids, which can also be seen in the figure below. However, maybe more interestingly is that the courser grids lack more in height then the finer grids. Also, for the courser grid in the Atlantic some weird behaviour can be seen East of the wave. However these are not shown for the finer grids. 
+
+Interestingly, even the finer grids do not reach the same height as the theoretical Kelvin wave. This may be for two reasons. Firstly, the model shows numerical dissipation that slowly dampens the solution with time. Another reason may be dampening of factors such as the Robert-Asselin filter, which is known to slowly dampen the solution \citep{Doos2022}. This is connected to this three level scheme having a computational mode, which affects the solution.
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[width=0.5\textwidth]{Figures/xaxis_grids.png}
+    \caption{This figure shows the zonal propagation of the Kelvin waves in the two oceans for a bunch of different grid sizes.}
+    \label{fig:x_grids}
+\end{figure}
+
 

@@ -1,10 +1,17 @@
+import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
 from load import load_h_data
 
-# Data
+times_a = [150]
+times_b = [250]
+
+# =========================================================
+# DATA
+# =========================================================
+
 ha_100 = load_h_data("atlantic_100")
-ha_300 = load_h_data("atlantic_250")
+ha_200 = load_h_data("atlantic_200")
 ha_300 = load_h_data("atlantic_300")
 ha_450 = load_h_data("atlantic_450")
 ha_600 = load_h_data("atlantic_600")
@@ -13,16 +20,8 @@ ha_900 = load_h_data("atlantic_900")
 ha_1050 = load_h_data("atlantic_1050")
 ha_1200 = load_h_data("atlantic_1200")
 
-ha = [
-    [ha_100, 100, 1000, "Atlantic"],
-    [ha_450, 450, 1000, "Atlantic"],
-    [ha_750, 750, 1000, "Atlantic"],
-    [ha_1050, 1050, 1000, "Atlantic"],
-    [ha_1200, 1200, 1000, "Atlantic"]
-]
-
 hb_100 = load_h_data("baltic_100")
-hb_300 = load_h_data("baltic_250")
+hb_200 = load_h_data("baltic_200")
 hb_300 = load_h_data("baltic_300")
 hb_450 = load_h_data("baltic_450")
 hb_600 = load_h_data("baltic_600")
@@ -31,160 +30,160 @@ hb_900 = load_h_data("baltic_900")
 hb_1050 = load_h_data("baltic_1050")
 hb_1200 = load_h_data("baltic_1200")
 
-hb = [
-    [hb_100, 100, 30, "Baltic"],
-    [hb_450, 450, 30, "Baltic"],
-    [hb_750, 750, 30, "Baltic"],
-    [hb_1050, 1050, 30, "Baltic"],
-    [hb_1200, 1200, 30, "Baltic"]
+cases = [
+    [ha_100, 1000, r"Atlantic 100$\times$100"],
+    [ha_200, 1000, r"Atlantic 200$\times$200"],
+    [ha_300, 1000, r"Atlantic 300$\times$300"],
+    [ha_450, 1000, r"Atlantic 450$\times$450"],
+
+    [hb_100, 30, r"Baltic 100$\times$100"],
+    [hb_200, 30, r"Baltic 200$\times$200"],
+    [hb_300, 30, r"Baltic 300$\times$300"],
+    [hb_450, 30, r"Baltic 450$\times$450"],
 ]
 
-hs = [ha,hb]
+# =========================================================
+# THEORY
+# =========================================================
 
-times = np.arange(12, 21*24 + 12, 12)
-g = 0.0981
-
-
-def theo(x, c, t, Lx, Ly):    
-    f = 1e-4              # Coriolis parameter [1/s]
-    h0 = 5                # amplitude [m]
-    Lw = Lx / 10
+def theo(h0, y, c):
+    """
+    Kelvin-wave decay away from boundary
+    """
+    f = 1e-4
     R = c / f
 
-    x = x * 1000  # km -> m
-    t = t * 3600  # hours -> seconds
+    y = y * 1000  # km -> m
 
-    # Wave center position (periodic)
-    x0 = (0.5 * Lx + c * t) % Lx
-
-    # Periodic distance
-    dx = x - x0
-    dx = (dx + Lx/2) % Lx - Lx/2
-
-    # Kelvin-wave Gaussian
-    Gt = h0 * np.exp(-(dx**2) / (Lw**2)) * np.exp(-0 / R)
-
-    return Gt
-
-
-def phase_diff(xmax, xmax_theo, c_theo, time, Lx):
-
-    # periodic distance
-    x_diff = xmax - xmax_theo
-    x_diff = (x_diff + Lx/2) % Lx - Lx/2
-
-    c_diff = x_diff / (time * 3600)
-
-    return c_theo + c_diff
-
-
-def rel_error(val1, val2):
-    return 100 * np.abs(val1 - val2) / val2
-
-results_a = []
-results_b = []
-
-for h_type in hs:
-    for (h_grid, grid, H, name) in h_type:
-        c_theo = np.sqrt(g * H)
-        Lx = float(h_grid.x.max())
-        Ly = float(h_grid.y.max())
-
-        ratios = []
-        for t in times:
-
-            # Select time and y=0
-            hnow = h_grid.sel(time=t, method="nearest")
-            ht = hnow.sel(y=0, method="nearest")
-
-            # Convert to numpy
-            h_values = ht.values
-            x_values = ht.x.values
-            Nx = len(x_values)
-
-            # Numerical peak
-            idx = np.argmax(h_values)
-            x_peak = x_values[idx]
-
-            # Theoretical peak
-            x_theo_peak = (0.5 * Lx + c_theo * t * 3600) % (Lx)
-
-            # Phase speed
-            c_num = phase_diff(x_peak, x_theo_peak, c_theo, t, Lx)
-            ratio = c_num/c_theo
-
-            # Store result
-            ratios.append(ratio)
-        
-        ratios = np.array(ratios)
-        std = np.std(ratios)
-        mean = np.mean(ratios)
-        end = ratios[-1]
-        min = mean-std
-        max = mean+std
-        
-        print(name, f"{grid}x{grid} -> num/theo = ", end)
-        if name == "Atlantic":
-            results_a.append((end, min, max))
-        if name == "Baltic":
-            results_b.append((mean, min, max))
-
+    return h0 * np.exp(-y / R)
 
 # =========================================================
-# PLOT
+# PLOTTING
 # =========================================================
 
-results_a = np.array(results_a)
-results_b = np.array(results_b)
+fig, axs = plt.subplots(2, 1, figsize=(7, 6), sharey=True)
 
-fig, ax = plt.subplots(figsize=(5,3))
+g = 0.0981
 
-grids_plot = np.array([100, 450, 750, 1050, 1200])
+for j, (dataset, H, name) in enumerate(cases):
 
-# Atlantic
-ax.plot(
-    grids_plot,
-    results_a[:,0],
-    marker="o",
-    label="Atlantic"
+    h = dataset
+
+    # Wave speed
+    c = np.sqrt(g * H)
+
+    # Domain
+    Lx = float(h.x.max())
+    Nx = len(h.x.values)
+    dx = Lx / Nx
+
+    # Constant theoretical amplitude
+    h0 = 5.0
+
+    # =====================================================
+    # TIME
+    # =====================================================
+
+    if j < len(cases)/2:
+        t = times_a[0]
+        ax = axs[0]
+    else:
+        t = times_b[0]
+        ax = axs[1]
+
+    # Select time
+    hnow = h.sel(time=t, method="nearest")
+
+    # =====================================================
+    # FIND WAVE PEAK
+    # =====================================================
+
+    hx = hnow.sel(y=0, method="nearest")
+
+    h_values = hx.values
+    x_values = hx.x.values
+
+    # Center-of-mass peak (stable)
+    weights = h_values - np.min(h_values)
+
+    if np.sum(weights) > 0:
+        weights = weights / np.sum(weights)
+        xmax = np.sum(x_values * weights)
+    else:
+        idx_max = np.argmax(h_values)
+        xmax = x_values[idx_max]
+
+    # =====================================================
+    # Y SECTION THROUGH PEAK
+    # =====================================================
+
+    ht = hnow.sel(x=xmax, method="nearest")
+
+    y_vals = ht.y.values / 1000  # km
+    hvals = ht.values
+
+    # Shift boundary to y=0
+    y_vals = y_vals - np.min(y_vals)
+
+    # =====================================================
+    # THEORY
+    # =====================================================
+
+    if j == 0 or j == int(len(cases)/2):
+
+        y_theo = np.linspace(0, np.max(y_vals), 1000)
+
+        h_theo = theo(h0, y_theo, c)
+
+        ax.plot(
+            y_theo,
+            h_theo / h0,
+            color="black",
+            linestyle="--",
+            linewidth=2,
+            label="Theory"
+        )
+
+    # =====================================================
+    # NUMERICAL
+    # =====================================================
+
+    ax.plot(
+        y_vals,
+        hvals / h0,
+        label=name
+    )
+
+    # =====================================================
+    # AXIS SETTINGS
+    # =====================================================
+
+    actual_time = float(ht["time"].values)
+
+    ax.set_title(f"t = {actual_time:.1f} h")
+
+    ax.set_xlim(0, 400)
+    ax.set_ylim(0, 1.1)
+
+    ax.set_xlabel(r"$y$ [km]")
+    ax.set_ylabel(r"$\eta/h_0$")
+
+    ax.grid(True, linestyle="--", alpha=0.6)
+
+    ax.legend()
+
+# =========================================================
+# FINALIZE
+# =========================================================
+
+plt.tight_layout(rect=[0, 0, 1, 0.95])
+
+plt.suptitle(
+    r"Kelvin-wave decay away from the boundary",
+    fontsize=16
 )
 
-ax.fill_between(
-    grids_plot,
-    results_a[:,1],
-    results_a[:,2],
-    alpha=0.3
-)
-
-# Baltic
-ax.plot(
-    grids_plot,
-    results_b[:,0],
-    marker="o",
-    label="Baltic"
-)
-
-ax.fill_between(
-    grids_plot,
-    results_b[:,1],
-    results_b[:,2],
-    alpha=0.3
-)
-
-# Reference line
-ax.axhline(1.0, linestyle="--", c="black")
-
-# Labels
-all_vals = np.concatenate([results_a[:, 0], results_b[:, 0]])
-ax.set_ylim(0.999*all_vals.min(), 1.003*all_vals.max())
-
-ax.set_xlabel("Grid resolution")
-ax.set_ylabel(r"$c_{\mathrm{num}} / c_{\mathrm{theo}}$")
-ax.set_title("Phase speed convergence", size=14)
-
-ax.legend()
-plt.tight_layout()
-plt.savefig("plots/phase.png", dpi=300)
-plt.savefig("kelvin-waves-report/Figures/phase.png", dpi=300)
+plt.savefig("plots/yaxis_grids.png", dpi=300)
+plt.savefig("kelvin-waves-report/Figures/yaxis_grids.png", dpi=300)
 
 plt.show()

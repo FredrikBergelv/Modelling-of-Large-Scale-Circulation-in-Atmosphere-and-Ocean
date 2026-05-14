@@ -102,7 +102,7 @@ for i, t in enumerate(times):
     ax.set_ylim(-0.1, 5.1)
     ax.set_xlim(0, Ly/1000)
      
-    ax.set_xlabel(r"$y$ [km]")
+    ax.set_xlabel(r"$x$ [km]")
     
     
     
@@ -147,8 +147,8 @@ print(r"\end{table}")
 
 plt.tight_layout(rect=[0, 0, 1, 0.93])
 plt.suptitle(r"Zonal Cross Sections of Kelvin and Rossby Waves", fontsize=16)
-plt.savefig("plots/eq_xaxis.png", dpi=300)
-plt.savefig("kelvin-waves-report/Figures/eq_xaxis.png", dpi=300)
+#plt.savefig("plots/eq_xaxis.png", dpi=300)
+#plt.savefig("kelvin-waves-report/Figures/eq_xaxis.png", dpi=300)
 
 plt.show()
 

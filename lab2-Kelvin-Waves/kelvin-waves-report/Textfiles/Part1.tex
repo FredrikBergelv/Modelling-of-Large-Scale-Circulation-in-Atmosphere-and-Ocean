@@ -1,13 +1,61 @@
 \section{Theory}
 \subsection{Coastal Kelvin Waves.}
-\textbf{(i)} Kelvin waves are a geostrophic phenomenon where the presence of a coast forces an initial perturbation to propagate along that coast. The movement is anticlockwise in the Northern Hemisphere and clockwise in the Southern Hemisphere.
+\textbf{i)} Kelvin waves are a geostrophic phenomenon where the presence of a coast forces an initial perturbation to propagate along that coast. The movement is anticlockwise in the Northern Hemisphere and clockwise in the Southern Hemisphere.
 
 The reason for these waves propagating the way they do lies in the presence of the boundary (like a coast or the equator). In normal geostrophic balance a large-scale high or low (same as a 'bump' or 'valley') can exist due to geostrophic movement around the high/low, maintaining the shape due to the presence of the Coriolis force.
 
 But if a boundary is present, no such flow around the high/low can exist. If one for example has a high, normal geostrophy tells us that we need anticyclonic motion around the high to keep the 'bump' in place. However, if we were to have a southern boundary (and we assume that we are in the Northern Hemisphere), then we would lack westerly geostrophic flow. Thus, due to the conservation of momentum, this high would have to propagate to the East. That is, in other words, a Kelvin wave.
 
-\textbf{(ii)} Equations. B.C. 
+\textbf{ii)} To study Kelvin waves one needs three critical assumptions; a set of geostrophic equations, some sort of solid boundary, and an initial perturbation. The set of equations can be any sort that includes time dependence and rotation. A common easy choice is to use the shallow water equations as
+\begin{subequations}
+\begin{empheq}[left=\empheqlbrace]{align}
+\frac{\partial u}{\partial t}& - fv = -g\prime \frac{\partial \eta}{\partial x} \\
+\frac{\partial v}{\partial t}& + fu = -g\prime \frac{\partial \eta}{\partial y} \\
+\frac{\partial \eta}{\partial t}& + H\left(\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y}\right) = 0
+\end{empheq}
+\label{eq:SWE}
+\end{subequations}
+where $u$ and $v$ are the horizontal velocity components in the $x$ and $y$ directions. $\eta$ is the free surface height, $H$ is the mean fluid depth, $f$ is the Coriolis parameter, and $g\prime$ is the reduced gravity parameter defined as 
+$$g\prime\equiv \frac{\rho_2-\rho_1}{\rho_1}.$$ The reduced gravity model assumes that we have a moving fluid layer of density $\rho_1$ on top of a non-moving layer of density $\rho_2$. The lower layer is assumed to be a lot deeper.
 
-\textbf{iii} Write solh
+The solid boundary can be something like a coast or the equator (where the Coriolis force is equal to zero). Thus the boundary is a solid boundary where the fluid cannot pass through. Finally, the initial perturbation has to be of an adequate size for the Coriolis force to be able to act upon it. A normal way of measuring this is stating that the perturbation has to be larger than the Rossby radius of deformation defined as 
+$$R\equiv \frac{\sqrt{g\prime H}}{f}$$ 
+away from the equator, or near the equator as
+$$R_\text{equator}\equiv \sqrt{\frac{\sqrt{g\prime H}}{\beta}} \text{ alternatively } R_\text{equator}\equiv \sqrt{\frac{\sqrt{g\prime H}}{2\beta}}.$$
+Above, the non-equatorial Rossby radius uses the f-plane approximation where $f\approx f_0$, and the equatorial Rossby radius uses the beta-plane approximation as $f\approx f_0+\beta y$, where $f_0=0$ at the equator.
 
+\newpage
+\textbf{iii)} If one assumes that we have a southern boundary, like a coast and an initial perturbation larger then the Rossby radius of deformation, then we can derive an solution to the coastal Kelvin waves. The solution is
+\begin{subequations}
+\begin{empheq}[left=\empheqlbrace]{align}
+\eta &=\eta_0\left(x-ct\right)e^{-\frac{y}{R}}   \\
+u &= \sqrt{\frac{g\prime}{H}}\eta_0\left(x-ct\right)e^{-\frac{y}{R}} \\
+v &= 0
+\end{empheq}
+\label{eq:solh}
+\end{subequations}
+where $\eta_0$ is the initial perturbation, and $c$ is the non-dispersive wave phase speed equal to $\sqrt{g\prime H}$. 
+
+Furthermore, one must note that this solution is only for the Northern Hemisphere. If one would be located at the Southern Hemisphere, then the Rossby radius of deformation would essentially 'be negative', which would lead to exponential increase in amplitude away from the coast. To combat this, one can derive an identical solution with the only change being that there is no minus sign in front of the exponent, and that the propagation is in the other direction. I.e. $c\rightarrow-c$ and $\exp\left(-\tfrac{y}{R}\right)\rightarrow\exp\left(\tfrac{y}{R}\right),$ where $R<0$. 
+
+\subsection{Equatorial Kelvin Waves}
+
+\textbf{i)} Essentially, equatorial Kelvin waves are just like coastal Kelvin waves, except that the boundary here is the equator. Since the Coriolis force is zero at the equator geostrophic flows cannot pass this line. Essentially this works the same way as described earlier, a large perturbation usually wants to stay in geostrophic balance, but since there cannot be any geostrophic flow along the equator, conservation of momentum will force the perturbation to move East. 
+
+The assumptions here are thus very similar to the coaster Kelvin waves, a set of geostrophic equations, an initial perturbation, and a close proximity to the equator. A suitable assumption to study this is to use the beta-plane approximation, which centred at the equator is 
+$$f\approx\beta y.$$
+Above $\beta$ is an always positive parameter, describing the linearized Coriolis term. The coordinate $y$ is cantered at the equator, meaning that a location on the Southern Hemisphere yields a negative $y$.  
+
+\textbf{ii)} If one assumes that we are close to the equator and that we have initial perturbation larger then the equatorial Rossby radius of deformation $R_\text{eq}$, then we can derive an solution to the equatorial coastal Kelvin waves. The solution is
+\begin{subequations}
+\begin{empheq}[left=\empheqlbrace]{align}
+\eta &=\eta_0\left(x-ct\right)e^{-\frac{y^2}{2R_\text{eq}^2}}   \\
+u &= \sqrt{\frac{g\prime}{H}}\eta_0\left(x-ct\right)e^{-\frac{y^2}{2R_\text{eq}^2}} \\
+v &= 0
+\end{empheq}
+\label{eq:eqsolh}
+\end{subequations}
+Note that there are two values of the equatorial Rossby radius of deformation, with a difference of a factor $\sqrt{\tfrac{1}{2}}$. In this report the definition without the $\sqrt{\tfrac{1}{2}}$ will be used. 
+
+\textbf{iii)} Since the exponential term in \autoref{eq:eqsolh} contains a $y^2$, the exponent will always be negative. The solution is thus applicable to both the Southern and Northern Hemisphere. The solution will thus always propagate in the positive $x$-direction i.e. East. One could also explain this through the beta-plane approximation, which shows that the $\beta$-term is always positive. One can visualize this ast the two equatorial Kelvin waves 'leans' onto ech other, and are each others coast. Thus the equatorial Kelvin wave will always propagate to the East.
 

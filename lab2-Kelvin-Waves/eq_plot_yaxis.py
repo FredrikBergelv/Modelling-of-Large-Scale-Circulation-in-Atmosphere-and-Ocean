@@ -47,7 +47,7 @@ def theo_h(h0, x, y, t, c=c):
 def theo_u(h0, x, y, t, c=c):    
     b = 2e-11             # Coriolis parameter [1/s]
     Lw = Lx / 10
-    R = np.sqrt(c / b)
+    R = np.sqrt(c / (2*b))
     y = y*1000 - Ly/2 #convert to m
     t = t*3600 # Convert to s
 
@@ -185,8 +185,8 @@ for i, t in enumerate(times):
 
 plt.tight_layout(rect=[0, 0, 1, 0.93])
 plt.suptitle(r"Meridional Cross Sections of Kelvin and Rossby Waves", fontsize=16)
-plt.savefig("plots/eq_yaxis.png", dpi=300)
-plt.savefig("kelvin-waves-report/Figures/eq_yaxis.png", dpi=300)
+#plt.savefig("plots/eq_yaxis.png", dpi=300)
+#plt.savefig("kelvin-waves-report/Figures/eq_yaxis.png", dpi=300)
 
 plt.show()
 

@@ -7,8 +7,7 @@ from load import give_all_data
 #Global data
 g = 0.01*9.81
 times_a = [0, 50, 150]
-times_b = [0, 200, 250]
-
+times_b = [0, 20, 250]
 
 
 # Load data
@@ -162,7 +161,7 @@ for j, (dataset,H,name) in enumerate(cases):
         if i==0:
           ax.set_xlim(0, Ly/1000)  
         else:
-            ax.set_xlim(0, 0.04*Ly/1000)
+            ax.set_xlim(0, 0.30*Ly/1000)
 
         ax.set_xlabel(r"$y$ [km]")
     

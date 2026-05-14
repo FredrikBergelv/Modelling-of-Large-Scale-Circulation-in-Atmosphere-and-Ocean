@@ -1,19 +1,28 @@
 \newpage\subsection{Equatorial Kelvin Waves}
-\textbf{(i)}
+\textbf{(i)} Reduced gravity is an essential tool to get more physical like solutions. Previously, the Rossby radius of deformation was here defined as 
+$$R_\text{equator}\equiv \sqrt{\frac{\sqrt{g\prime H}}{\beta}}.$$
+If one was to compute the Rossby radius of deformation with some common parameters such as $H=\SI{1000}{\meter}$, $\beta=\SI{2e-11}{\per\meter\second}$ and a normal gravity of $g=\SI{9.82}{\meter\per\second\squared}$, one would obtain a Rossby radius of more then \SI{2000}{\kilo\meter}, which is more then the distance from Stockholm to Istanbul! Thus this is a highly unrealistic value. If one instead uses a reduced gravity of $g\prime=\SI{0.0981}{\meter\per\second\squared}$ one gets a large radius, but far more realistic.
+
+\textbf{ii)} A horizontal cross-section plot of the equatorial Kelvin wave can be seen in \autoref{fig:equator}. There one can see two things happening. Something propagating as a Gaussian shape to the East, which has to be the equatorial Kelvin wave since this aligns with the theory. However, two other objects are shown, to propagate more slowly to the west. This has to be the equatorial Rossby wave, since these are known to propagate in the Western direction. Furthermore, it make sense that we have a westerly propagating equatorial Rossby wave since this is the only way to preserve momentum. 
+
+
 \begin{figure}[H]
     \centering    
     \includegraphics[width=\textwidth]{Figures/equator.png}
-    \caption{This figure...}
+    \caption{This figure shows the horizontal cross-section of the equatorial Kelvin wave and equatorial Rossby waves. The orange arrows indicate the velocity. This model was created by a grid size of 2e7$\times$2e7 \si{\meter\squared} with a resolution of 300$\times$300. The mean depth is 1000 m, and the initial perturbation is as before.}
     \label{fig:equator}
 \end{figure}
+
+\textbf{iii)} A plot of the wave at along the equator ca be seen in \autoref{fig:eq_xaxis}. There can one also see the initial conditions and the theoretical solution. One can also observe that the Kelvin wave has a smaller amplitude then expected. This may be due to the fact that some of the volume is carried away by the Rossby waves, which results in a smaller Kelvin wave.  
 
 \begin{figure}[H]
     \centering    
     \includegraphics[width=\textwidth]{Figures/eq_xaxis.png}
-    \caption{This figure...}
+    \caption{This figure shows the equatorial Kelvin wave for different times along the equator.}
     \label{fig:eq_xaxis}
 \end{figure}
 
+\textbf{iv)} From \autoref{fig:eq_xaxis} the phase speed can be computed, which can be seen in \autoref{tab:equator}. There one can see similar phase speed accuracy to the coastal Kelvin wave, with a accuracy of 6\% after 200 h. The reason for the slower moving computational model is the same reason as before (see \autoref{eq:phase}). The discretized version is never the same as the theoretical version, which gives an error in the phase speed and a slower phase speed.
 
 \begin{table}[H]
 \centering
@@ -28,14 +37,19 @@ Time [h] & $x_{\max}$ [km] & $c_{\mathrm{num}}$ [m/s] & $c_{\mathrm{theo}}$ [m/s
 0$\rightarrow$ 200 & 16700.0 & 9.33 & 9.90 & 5.81 \\
 \hline
 \end{tabular}
-\caption{Kelvin-wave phase speed diagnostics taken from \autoref{fig:eq_xaxis}.}
-\label{tab:kelvin_speed}
+\caption{Equatorial Kelvin-wave phase speed diagnostics taken from \autoref{fig:eq_xaxis}.}
+\label{tab:equator}
 \end{table}
 
+\textbf{v)} The meridional cross-sectional amplitude decay of the numerical solution can be seen in \autoref{fig:eq_yaxis}. This is shown together with the initial condition, the theoretical solution and the equatorial Rossby wave. There one can observe that the initial state is split up between the equatorial Kelvin wave and the equatorial Rossby wave. Since the initial perturbation is split up, the theoretical solution has been modified to use the same amplitude as the equatorial Kelvin wave to provide insight into the decay of the solution. There one can see that after around 100 hours, the theoretical decay solutions agrees very well with the numerical decay. The same can be said for the velocity, which also agrees well with the theoretical solution. This theoretical solution used the Rossby radius of deformation defined without the $\sqrt{\tfrac{1}{2}}$-factor. Thus one can from this deduce that the Rossby radius without the $\sqrt{\tfrac{1}{2}}$-factor works well.
 
 \begin{figure}[H]
     \centering    
     \includegraphics[width=\textwidth]{Figures/eq_yaxis.png}
-    \caption{This figure...}
+    \caption{This figure shows the cross-sectional solution of the equatorial Kelvin wave and the equatorial Rossby wave, at the location of the peak of the wave. }
     \label{fig:eq_yaxis}
 \end{figure}
+
+\textbf{vi)} Equatorial Kelvin waves are primarily associated with the Pacific Ocean, and especially the El Niño Southern Oscillation event. During an El Niño, the Walker circulation feeds on itself, creating a large wind stress over the Pacific. This creates higher water height near the western boundary, compared to the eastern boundary. Thus, the equatorial Kelvin wave is an important way of relaxation of El Niño, as it transports energy eastward!
+
+These waves can often be measured and found by observing the wind stress over the Pacific Ocean. More interestingly, these equatorial Kelvin waves are known to create coastal Kelvin waves when they hit the South American coast, which connects the two types of Kelvin waves studied here. The same type of El Niño-like events does not occur in the Atlantic due to that ocean being much smaller than the Pacific.
