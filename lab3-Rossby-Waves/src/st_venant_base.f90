@@ -51,6 +51,7 @@ PROGRAM ST_VENANT
       & g = 9.81,         &        ! Gravity acceleration [m s^-2]
       & D = 4000.,        &        ! average depth [m]
       & f0 = 1.e-4,       &        ! Coriolis constant [s^-1] (only used if l_coriolis is set to true)
+      & beta = 2.31e-11,  &        ! Beta constant [s^-1 m^-1] (only used if l_beta is set to true)
       & rcfl = 0.3,       &        ! CFL criterion
       & gamma = 0.1,      &        ! Asselin coefficient
       & Lx = 5.*1e+7,     &        ! size of domain [m]
@@ -59,7 +60,7 @@ PROGRAM ST_VENANT
       & Lw = 20.,         &        ! Width of the gaussian (only used if l_gaussian is set to true)
       & G_scale = 0.25,   &        ! Gaussian scaling factor. Scales the shortest domain lenght
       & Tm_d = 10.,       &        ! length of the run in days
-      & rfsave = 1.                ! frequency at which to save fields in hours.
+      & rfsave = 1.                ! Timestep at which to save fields in hours.
    !!
    INTEGER ::             &
       & Nx = 100,         &        ! number of x T-points
@@ -69,6 +70,7 @@ PROGRAM ST_VENANT
    !!
    LOGICAL :: l_write_uv = .TRUE.         ! should we output U and V? H is always writen!
    LOGICAL :: l_coriolis = .TRUE.         ! should we include coriolis?
+   LOGICAL :: l_beta = .TRUE.             ! should we include the beta plane?
    LOGICAL :: l_solidbc = .TRUE.          ! Should we use solid bc?
    LOGICAL :: l_periodic = .TRUE.         ! Should we use periodic bc?
    LOGICAL :: l_up = .TRUE.               ! Should bc be periodic in u?
@@ -80,11 +82,13 @@ PROGRAM ST_VENANT
    LOGICAL :: l_step = .TRUE.             ! Should we use a step function as initial condition?
    LOGICAL :: l_energy = .TRUE.           ! Should we compute the energy of the system?
    LOGICAL :: l_energyij = .TRUE.         ! Should we compute the energy of the system at each point?
+   LOGICAL :: l_greduce = .TRUE.          ! should we include reduce gravity?
+   LOGICAL :: l_coast = .TRUE.            ! Should we introduce a coast?
    !! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    LOGICAL :: lexist
 
-   REAL    :: dx, dy, dt, ra
+   REAL    :: dx, dy, dt, ra, shiftx, shifty
    REAL(4)    :: tm ! length of the run in seconds...
 
    ! Define matrices that will be allocated later:
@@ -104,15 +108,15 @@ PROGRAM ST_VENANT
    NAMELIST /ngrid/ &
    & Nx, Ny, Lx, Ly, Tm_d, rfsave
    NAMELIST /nphysics/ &
-   & l_coriolis, f0, D, &
+   & l_greduce, l_coriolis, f0, l_beta, beta, D, &
    & l_energy, l_energyij
    NAMELIST /ninitial/ &
-   & h0, l_gaussian, Lw, l_step
+   & h0, l_gaussian, G_scale, l_step
    NAMELIST /nnumerics/ &
    & rcfl, gamma
    NAMELIST /nboundaries/ &
    & l_write_uv, l_solidbc, l_periodic, l_up, l_vp, l_spongebc, S, btype, &
-   & l_write_domain, l_alpha
+   & l_write_domain, l_alpha, l_coast
 
    !! Declarations are done, starting the program !
 
@@ -150,6 +154,11 @@ PROGRAM ST_VENANT
    END IF
 
    PRINT *, ''
+
+   !! Reduce gravity
+   IF (l_greduce) THEN
+      g = 0.01*g
+   END IF
 
    !! Time stuff
    !! ==========
@@ -234,6 +243,13 @@ PROGRAM ST_VENANT
 
    vtime(:) = (/((jt - 1)*rfsave, jt=1, nb_save)/) ! in hours !!!
 
+   !! Shift due to the beta plane
+   IF (l_beta) THEN
+      print *, 'shifting vy_t and vy_v'
+      vy_t = vy_t - 0.5*Ly
+      vy_v = vy_v - 0.5*Ly
+   END IF
+
    !! Building sponge.
 
    ALLOCATE (alpha_u(0:Nx, Ny))
@@ -255,15 +271,34 @@ PROGRAM ST_VENANT
       ! Gaussian width => Lw = 4 Sigma
       ! Relative to short-side basin width
       ! 1/3 short-side basin width => Lw = 3
+      ! TODO: wouldn't Lw = Lw * min(Lx, Ly) be easier to understand?
+      ! TODO: use Lw as fraction of basin width instead?
       Lw = min(Lx, Ly)/Lw
       PRINT *, 'Width of gaussian is set to:', Lw
       PRINT *, 'Hight of gaussian is set to:', h0
+
+      !* Shift gaussian
+      IF (l_beta) THEN
+         shiftx = 0.5*Lx
+         shifty = 0
+      ELSE
+         shiftx = 0.5*Lx
+         shifty = 0.5*Ly
+      END IF
+
+      IF (l_coast .AND. btype == 2) THEN
+         shiftx = Lx
+         shifty = 0.5*Ly
+      ELSEIF (l_coast .AND. btype == 1) THEN
+         shiftx = 0.5*Lx
+         shifty = 0
+      END IF
 
       !* Gaussian
       ! h(x,y) = h0 e^{ -( (x - x0)/(4 Sigma) )^2 - ( (y - y0)/(4 Sigma) )^2 }
       DO jj = 1, Ny
          DO ji = 1, Nx
-            h(ji, jj, 1) = h0*exp(-((vx_t(ji) - 0.5*Lx)/Lw)**2.-((vy_t(jj) - 0.5*Ly)/Lw)**2.)
+            h(ji, jj, 1) = h0*exp(-((vx_t(ji) - shiftx)/Lw)**2.-((vy_t(jj) - shifty)/Lw)**2.)
          END DO
       END DO
 
@@ -271,6 +306,11 @@ PROGRAM ST_VENANT
    ELSE IF (l_step) THEN
       h(1:Nx/2, :, 1) = -h0
       h(Nx/2 + 1:Nx, :, 1) = h0
+   END IF
+
+   !! Apply coast
+   IF (l_coast) THEN
+      CALL APPLY_COAST()
    END IF
 
    ! Saving initial condition:
@@ -341,8 +381,8 @@ PROGRAM ST_VENANT
       Xdu(Nx, :) = Xdu(Nx, :) - g/dx*(h_tmp(1, :, -1) - h_tmp(Nx, :, -1))
    END IF
    IF (l_vp .and. l_periodic) THEN
-      Xdv(:, 0) = Xdv(:, 0) - g/dx*(h_tmp(:, 1, -1) - h_tmp(:, Ny, -1))
-      Xdv(:, Ny) = Xdv(:, Ny) - g/dx*(h_tmp(:, 1, -1) - h_tmp(:, Ny, -1))
+      Xdv(:, 0) = Xdv(:, 0) - g/dy*(h_tmp(:, 1, -1) - h_tmp(:, Ny, -1))
+      Xdv(:, Ny) = Xdv(:, Ny) - g/dy*(h_tmp(:, 1, -1) - h_tmp(:, Ny, -1))
    END IF
 
    ! Adding Coriolis
@@ -351,6 +391,16 @@ PROGRAM ST_VENANT
       ! Add Coriolis here
       Xdu(:, :) = Xdu(:, :) + f0*V_u(:, :)
       Xdv(:, :) = Xdv(:, :) - f0*U_v(:, :)
+
+      ! Add beta effect
+      IF (l_beta) THEN
+         DO jj = 0, Ny
+            IF (jj /= 0) THEN
+               Xdu(:, jj) = Xdu(:, jj) + beta*vy_t(jj)*V_u(:, jj)
+            END IF
+            Xdv(:, jj) = Xdv(:, jj) - beta*vy_v(jj)*U_v(:, jj)
+         END DO
+      END IF
    END IF
 
    ! Convergence/divergence
@@ -371,6 +421,11 @@ PROGRAM ST_VENANT
    END IF
    IF (l_spongebc) THEN
       CALL APPLY_SPONGE_BC(jt_step=-1)
+   END IF
+
+   !! Apply coast
+   IF (l_coast) THEN
+      CALL APPLY_COAST()
    END IF
 
    PRINT *, 'Done with first Euler step.                  time step =', jt
@@ -436,8 +491,8 @@ PROGRAM ST_VENANT
          Xdu(Nx, :) = Xdu(Nx, :) - g/dx*(h_tmp(1, :, 0) - h_tmp(Nx, :, 0))
       END IF
       IF (l_vp .and. l_periodic) THEN
-         Xdv(:, 0) = Xdv(:, 0) - g/dx*(h_tmp(:, 1, 0) - h_tmp(:, Ny, 0))
-         Xdv(:, Ny) = Xdv(:, Ny) - g/dx*(h_tmp(:, 1, 0) - h_tmp(:, Ny, 0))
+         Xdv(:, 0) = Xdv(:, 0) - g/dy*(h_tmp(:, 1, 0) - h_tmp(:, Ny, 0))
+         Xdv(:, Ny) = Xdv(:, Ny) - g/dy*(h_tmp(:, 1, 0) - h_tmp(:, Ny, 0))
       END IF
 
       ! Adding Coriolis
@@ -446,6 +501,15 @@ PROGRAM ST_VENANT
          ! Add Coriolis here
          Xdu(:, :) = Xdu(:, :) + f0*V_u(:, :)
          Xdv(:, :) = Xdv(:, :) - f0*U_v(:, :)
+
+         IF (l_beta) THEN
+            DO jj = 0, Ny
+               IF (jj /= 0) THEN
+                  Xdu(:, jj) = Xdu(:, jj) + beta*vy_t(jj)*V_u(:, jj)
+               END IF
+               Xdv(:, jj) = Xdv(:, jj) - beta*vy_v(jj)*U_v(:, jj)
+            END DO
+         END IF
       END IF
 
       ! Convergence/divergence
@@ -472,6 +536,11 @@ PROGRAM ST_VENANT
       END IF
       IF (l_spongebc) THEN
          CALL APPLY_SPONGE_BC()
+      END IF
+
+      !! Apply coast
+      IF (l_coast) THEN
+         CALL APPLY_COAST()
       END IF
 
       ! Re-arrange matrices
@@ -652,6 +721,20 @@ CONTAINS
       END IF
 
    END SUBROUTINE APPLY_PERIODIC_BC
+
+   SUBROUTINE APPLY_COAST()
+
+      IF (btype == 2) THEN
+         u_tmp(Nx - sx:Nx, :, :) = 0.
+         v_tmp(Nx - sx + 1:Nx, :, :) = 0.
+         h_tmp(Nx - sx + 1:Nx, :, :) = 0.
+      ELSEIF (btype == 1) THEN
+         u_tmp(:, 1:sy, :) = 0.
+         v_tmp(:, 0:sy, :) = 0.
+         h_tmp(:, 1:sy, :) = 0.
+      END IF
+
+   END SUBROUTINE APPLY_COAST
 
    SUBROUTINE COMPUTE_ENERGY()
 

@@ -7,7 +7,7 @@ from load import load_data
 
 
 # --- Load data ---
-h, u, v = load_data("pacific")
+h, u, v = load_data("test")
 
 # --- Compute global velocity scale ---
 u_i_all = 0.5 * (u.values[:, :, :-1] + u.values[:, :, 1:])
@@ -62,7 +62,7 @@ Q = ax.quiver(
     u_i0[::step, ::step],
     v_i0[::step, ::step],
     color="white",
-    scale=global_max * 3,
+    scale=global_max * 4,
     alpha=0.4,
     width=0.004
 )
@@ -110,6 +110,6 @@ ani = animation.FuncAnimation(
 )
 
 # Save
-ani.save("plots/animation_equator.gif", writer="pillow", fps=10)
+ani.save("plots/animation.gif", writer="pillow", fps=20)
 
-print("Animation saved as 'plots/animation_equator.gif'")
+print("Animation saved as 'plots/animation.gif'")

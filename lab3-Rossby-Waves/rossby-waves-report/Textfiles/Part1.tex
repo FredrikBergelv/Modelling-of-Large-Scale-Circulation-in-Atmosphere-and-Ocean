@@ -1,2 +1,29 @@
 \section{Theory}
 
+\textbf{v)} The normal convergence-equation in the shallow water equations is 
+\begin{equation}
+    \frac{\partial \eta}{\partial t} + \frac{\partial (uh)}{\partial x} + \frac{\partial (vh)}{\partial y} = 0.
+\label{eq:convergence}
+\end{equation}
+Normally we use that $h=H_0+\eta$, where $\eta\ll H_0$. But now we instead use a varying topography with $h=H_0+\alpha y + \eta$, where $\eta\ll H_0$ and $\alpha y \ll H_0$. Using this on \autoref{eq:convergence} we obtain
+\begin{equation}
+\implies
+\frac{\partial \eta}{\partial t}
++
+H_0
+\left(
+\frac{\partial u}{\partial x}
++
+\frac{\partial v}{\partial y}
+\right)
++
+\underbrace{
+\alpha y
+\left(
+\frac{\partial u}{\partial x}
++
+\frac{\partial v}{\partial y}
+\right) +\alpha v
+}_{\text{new topographic terms}}
+=0.
+\end{equation}

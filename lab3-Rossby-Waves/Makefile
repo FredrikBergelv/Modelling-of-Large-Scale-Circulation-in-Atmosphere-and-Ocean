@@ -37,6 +37,6 @@ hej:
 clean:
 	rm -f *.x *.bin src/*.o src/*.mod *.mod *~ *\#
 
-run:
+run_all:
 	bash run_all.sh
 

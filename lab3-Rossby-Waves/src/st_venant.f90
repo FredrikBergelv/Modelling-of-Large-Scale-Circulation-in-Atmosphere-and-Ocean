@@ -52,8 +52,9 @@ PROGRAM ST_VENANT
    REAL ::                &
       & g = 9.81,         &        ! Gravity acceleration [m s^-2]
       & D = 4000.,        &        ! average depth [m]
+      & depth_diff = 0.1, &        ! Depth is set as D(y)=D-(y-0.5*Ly)*alpha, where alpha = (2*D/L)*depth_diff
       & f0 = 1.e-4,       &        ! Coriolis constant [s^-1] (only used if l_coriolis is set to true)
-      & beta = 2.e-11,    &        ! Beta plane approx
+      & beta = 2.31e-11,  &        ! Beta plane approx
       & rcfl = 0.3,       &        ! CFL criterion
       & gamma = 0.1,      &        ! Asselin coefficient
       & Lx = 5.*1e+7,     &        ! size of domain [m]
@@ -71,6 +72,7 @@ PROGRAM ST_VENANT
    !!
    LOGICAL :: l_write_uv = .TRUE.         ! should we output U and V? H is always writen!
    LOGICAL :: l_coriolis = .TRUE.         ! should we include coriolis?
+   LOGICAL :: l_topography = .TRUE.       ! Do we want sloping bottom
    LOGICAL :: l_betaplane = .TRUE.        ! should we include beta factor?
    LOGICAL :: l_solidbc = .TRUE.          ! Should we use solid bc?
    LOGICAL :: l_solidbc_south = .TRUE.          ! Should we use solid bc?
@@ -82,6 +84,7 @@ PROGRAM ST_VENANT
    LOGICAL :: l_alpha = .TRUE.            ! Should we output alpha_u and alpha_v?
    LOGICAL :: l_gaussian = .TRUE.         ! Should we use a gaussian as initial condition?
    LOGICAL :: l_gaussian_south = .TRUE.   ! Should we use a gaussian at southern border?
+   LOGICAL :: l_geostrophy = .TRUE.   
    LOGICAL :: l_stepfunction = .TRUE.     ! Should we use a step function as initial condition?
    LOGICAL :: l_energy = .TRUE.           ! Should we compute the energy of the system?
    LOGICAL :: l_energyij = .TRUE.         ! Should we compute the energy of the system at each point?
@@ -91,7 +94,7 @@ PROGRAM ST_VENANT
 
    LOGICAL :: lexist
 
-   REAL    :: dx, dy, dt, ra, x, x0, y
+   REAL    :: dx, dy, dt, ra, x, x0, y, shiftx, shifty, alpha
    REAL(4)    :: tm ! length of the run in seconds...
 
    ! Define matrices that will be allocated later:
@@ -99,7 +102,7 @@ PROGRAM ST_VENANT
    !
    REAL(4), DIMENSION(:, :, :), ALLOCATABLE :: u, v, h ! Storage arrays, no need for heavy double precision => float!
    !
-   REAL, DIMENSION(:, :), ALLOCATABLE :: Xdu, Xdv, Xdh, U_t, V_t, U_v, V_u, alpha_u, alpha_v
+   REAL, DIMENSION(:, :), ALLOCATABLE :: Xdu, Xdv, Xdh, U_t, V_t, U_v, V_u, alpha_u, alpha_v, D_array
    !
    REAL, DIMENSION(:), ALLOCATABLE :: vx_t, vy_t, vx_u, vy_v, vtime, ek, ep, et
    !! Indices for loops
@@ -111,9 +114,10 @@ PROGRAM ST_VENANT
    & Nx, Ny, Lx, Ly, Tm_d, rfsave, data_name
    NAMELIST /nphysics/ &
    & l_coriolis, f0, l_betaplane, beta, D, g, &
+   & l_topography, depth_diff, &
    & l_energy, l_energyij
    NAMELIST /ninitial/ &
-   & h0, l_gaussian, l_gaussian_south, Lw, l_stepfunction
+   & h0, l_gaussian, l_gaussian_south, Lw, l_geostrophy, l_stepfunction
    NAMELIST /nnumerics/ &
    & rcfl, gamma
    NAMELIST /nboundaries/ &
@@ -146,6 +150,8 @@ PROGRAM ST_VENANT
    CLOSE (11)
    PRINT *, 'Done reading namelist.'
    !! Namelist paramters are now known!
+
+   alpha = depth_diff*(2*D/Ly)
 
    ! Create output directory if it does not exist
    CALL SYSTEM('mkdir -p ' // TRIM(data_name))
@@ -225,6 +231,7 @@ PROGRAM ST_VENANT
    PRINT *, ' ============== Settings of model ============== '
    IF (l_coriolis) PRINT *, '  Coriolis is on'
    IF (l_betaplane) PRINT *, '  Beta-plane appriximation is on'
+   IF (l_topography) PRINT *, '  Sloping topography is on and alpha = ', alpha 
    IF (l_periodic) THEN
       IF (l_vp) PRINT *, '  Periodic boundary condition in N-S on'
       IF (l_up) PRINT *, '  Periodic boundary condition in E-W on'
@@ -258,8 +265,16 @@ PROGRAM ST_VENANT
 
    vtime(:) = (/((jt - 1)*rfsave, jt=1, nb_save)/) ! in hours !!!
 
-   !! Building sponge.
 
+   !! Shift due to the beta plane
+   IF (l_betaplane) THEN
+      print *, 'shifting vy_t and vy_v'
+      vy_t = vy_t - 0.5*Ly
+      vy_v = vy_v - 0.5*Ly
+   END IF
+
+
+   !! Building sponge.
    ALLOCATE (alpha_u(0:Nx, Ny))
    ALLOCATE (alpha_v(Nx, 0:Ny))
 
@@ -288,12 +303,51 @@ PROGRAM ST_VENANT
       PRINT *, 'Width of gaussian is set to:', Lw
       PRINT *, 'Hight of gaussian is set to:', h0
 
+
+      !* Shift gaussian
+      IF (l_betaplane) THEN
+         shiftx = 0.5*Lx
+         shifty = 0
+      ELSE
+         shiftx = 0.5*Lx
+         shifty = 0.5*Ly
+      END IF
+
+      IF (l_gaussian_south .AND. btype == 2) THEN
+         shiftx = Lx
+         shifty = 0.5*Ly
+      ELSEIF (l_gaussian_south .AND. btype == 1) THEN
+         shiftx = 0.5*Lx
+         shifty = 0
+      END IF
+
       !* Gaussian
       ! h(x,y) = h0 e^{ -( (x - x0)/(4 Sigma) )^2 - ( (y - y0)/(4 Sigma) )^2 }
       DO jj = 1, Ny
          DO ji = 1, Nx
             if (.NOT. l_gaussian_south ) THEN
-               h(ji, jj, 1) = h0*exp(-((vx_t(ji) - 0.5*Lx)/Lw)**2.-((vy_t(jj) - 0.5*Ly)/Lw)**2.)
+               h(ji, jj, 1) = h0*exp(-((vx_t(ji) - shiftx)/Lw)**2.-((vy_t(jj) - shifty)/Lw)**2.)
+
+            IF (l_geostrophy) THEN
+
+               IF (l_betaplane) then
+                  ! geostrophic velocities
+                  u(ji, jj, 1) = -(g/((vy_t(jj) - shifty)*beta+f0)) * (-2.0*(vy_t(jj) - shifty)/(Lw**2) * h(ji, jj, 1))
+                  v(ji, jj, 1) =  (g/((vy_t(jj) - shifty)*beta+f0)) * (-2.0*(vx_t(ji) - shiftx)/(Lw**2) * h(ji, jj, 1))
+               else
+                  ! geostrophic velocities
+                  u(ji, jj, 1) = -(g/f0) * (-2.0*(vy_t(jj) - shifty)/(Lw**2) * h(ji, jj, 1))
+                  v(ji, jj, 1) =  (g/f0) * (-2.0*(vx_t(ji) - shiftx)/(Lw**2) * h(ji, jj, 1))
+               end if
+
+            ELSE
+
+               u(ji, jj, 1) = 0.0
+               v(ji, jj, 1) = 0.0
+
+            END IF
+                  
+
             end if 
             if (l_gaussian_south ) THEN
                h(ji, jj, 1) = h0*exp(-((vx_t(ji) - 0.5*Lx)/Lw)**2.-((vy_t(jj))/Lw)**2.)
@@ -311,6 +365,9 @@ PROGRAM ST_VENANT
    CALL WRITE_NC_2D(vx_t, vy_t, h(:, :, 1), TRIM(data_name)//'/h_init_cond.nc', 'h0')
 
    h_tmp(:, :, -1) = h(:, :, 1)
+   u_tmp(:, :, -1) = u(:, :, 1)
+   v_tmp(:, :, -1) = v(:, :, 1)
+
 
    ! jt_save are the writing time steps: h(:,:,jt_save), u(:,:,jt_save), v(:,:,jt_save)
    jt_save = 1; jt = 0
@@ -375,8 +432,8 @@ PROGRAM ST_VENANT
       Xdu(Nx, :) = Xdu(Nx, :) - g/dx*(h_tmp(1, :, -1) - h_tmp(Nx, :, -1))
    END IF
    IF (l_vp .and. l_periodic) THEN
-      Xdv(:, 0) = Xdv(:, 0) - g/dx*(h_tmp(:, 1, -1) - h_tmp(:, Ny, -1))
-      Xdv(:, Ny) = Xdv(:, Ny) - g/dx*(h_tmp(:, 1, -1) - h_tmp(:, Ny, -1))
+      Xdv(:, 0) = Xdv(:, 0) - g/dy*(h_tmp(:, 1, -1) - h_tmp(:, Ny, -1))
+      Xdv(:, Ny) = Xdv(:, Ny) - g/dy*(h_tmp(:, 1, -1) - h_tmp(:, Ny, -1))
    END IF
 
    ! Adding Coriolis
@@ -385,25 +442,29 @@ PROGRAM ST_VENANT
       ! Add Coriolis here
       Xdu(:, :) = Xdu(:, :) + f0*V_u(:, :)
       Xdv(:, :) = Xdv(:, :) - f0*U_v(:, :)
-   END IF 
-
-   IF (l_betaplane) THEN !!!!! My own beta
-      DO jj = 1, Ny
-         y = vy_t(jj) - Ly/2
-
-         Xdu(:,jj) = Xdu(:,jj) + (f0 + beta*y) * V_u(:,jj)
-      END DO
-
-      DO jj = 0, Ny
-         y = vy_v(jj) - Ly/2
-
-         Xdv(:,jj) = Xdv(:,jj) - (f0 + beta*y) * U_v(:,jj)
-      END DO
+      IF (l_betaplane) THEN !!!!! My own beta
+         DO jj = 0, Ny
+            IF (jj /= 0) THEN
+               Xdu(:, jj) = Xdu(:, jj) + beta*vy_t(jj)*V_u(:, jj)
+            END IF
+            Xdv(:, jj) = Xdv(:, jj) - beta*vy_v(jj)*U_v(:, jj)
+         END DO
+      END IF
    END IF
 
    ! Convergence/divergence
    ! ======================
    Xdh(:, :) = Xdh(:, :) - D*((u_tmp(1:Nx, :, -1) - u_tmp(0:Nx - 1, :, -1))/dx + (v_tmp(:, 1:Ny, -1) - v_tmp(:, 0:Ny - 1, -1))/dy)
+
+   IF (l_topography) THEN
+      DO jj = 1, Ny
+         y = vy_t(jj)
+         Xdh(:, jj) = Xdh(:, jj) &
+            - alpha*y * ( (u_tmp(1:Nx, jj, -1) - u_tmp(0:Nx-1, jj, -1))/dx + (v_tmp(:, jj, -1) - v_tmp(:, jj-1, -1))/dy ) &
+            - alpha * v_tmp(:, jj, -1)
+
+      END DO
+   END IF
 
    ! Time step
    ! =========
@@ -489,38 +550,40 @@ PROGRAM ST_VENANT
          Xdu(Nx, :) = Xdu(Nx, :) - g/dx*(h_tmp(1, :, 0) - h_tmp(Nx, :, 0))
       END IF
       IF (l_vp .and. l_periodic) THEN
-         Xdv(:, 0) = Xdv(:, 0) - g/dx*(h_tmp(:, 1, 0) - h_tmp(:, Ny, 0))
-         Xdv(:, Ny) = Xdv(:, Ny) - g/dx*(h_tmp(:, 1, 0) - h_tmp(:, Ny, 0))
+         Xdv(:, 0) = Xdv(:, 0) - g/dy*(h_tmp(:, 1, 0) - h_tmp(:, Ny, 0))
+         Xdv(:, Ny) = Xdv(:, Ny) - g/dy*(h_tmp(:, 1, 0) - h_tmp(:, Ny, 0))
       END IF
 
       ! Adding Coriolis
       ! ===============
       IF (l_coriolis) THEN
-         IF (.NOT. l_betaplane) THEN
-            ! Add Coriolis here
-            Xdu(:, :) = Xdu(:, :) + f0*V_u(:, :)
-            Xdv(:, :) = Xdv(:, :) - f0*U_v(:, :)
-         END IF 
+         ! Add Coriolis here
+         Xdu(:, :) = Xdu(:, :) + f0*V_u(:, :)
+         Xdv(:, :) = Xdv(:, :) - f0*U_v(:, :)
 
-         IF (l_betaplane) THEN !!!!! TETS
-            DO jj = 1, Ny
-               y = vy_t(jj) - Ly/2
-
-               Xdu(:,jj) = Xdu(:,jj) + beta*y * V_u(:,jj)
-            END DO
-
+         IF (l_betaplane) THEN
             DO jj = 0, Ny
-               y = vy_v(jj) - Ly/2
-
-               Xdv(:,jj) = Xdv(:,jj) - beta*y * U_v(:,jj)
+               IF (jj /= 0) THEN
+                  Xdu(:, jj) = Xdu(:, jj) + beta*vy_t(jj)*V_u(:, jj)
+               END IF
+               Xdv(:, jj) = Xdv(:, jj) - beta*vy_v(jj)*U_v(:, jj)
             END DO
          END IF
-
       END IF
 
       ! Convergence/divergence
       ! ======================
       Xdh(:, :) = Xdh(:, :) - D*((u_tmp(1:Nx, :, 0) - u_tmp(0:Nx - 1, :, 0))/dx + (v_tmp(:, 1:Ny, 0) - v_tmp(:, 0:Ny - 1, 0))/dy)
+
+      IF (l_topography) THEN
+         DO jj = 1, Ny
+            y = vy_t(jj)
+
+            Xdh(:, jj) = Xdh(:, jj) &
+               - alpha*y * ( (u_tmp(1:Nx, jj, 0) - u_tmp(0:Nx-1, jj, 0))/dx + (v_tmp(:, jj, 0) - v_tmp(:, jj-1, 0))/dy ) &
+               - alpha * v_tmp(:, jj, 0)
+         END DO
+      END IF
 
       ! Time step
       ! =========
@@ -567,7 +630,12 @@ PROGRAM ST_VENANT
          END IF
          h(:, :, jt_save) = REAL(h_tmp(:, :, 0), 4)
 
-         PRINT *, 'Save fields at time', REAL(vtime(jt_save), 4), ' time step =', jt, ' of', nt, 100*REAL(jt,4)/REAL(nt, 4), '%'
+         !PRINT *, 'Save fields at time', REAL(vtime(jt_save), 4), ' time step =', jt, ' of', nt, 100*REAL(jt,4)/REAL(nt, 4), '%'
+         WRITE(*,'(A,F8.2,A,I6,A,I6,A,F6.2,A)') &
+                 'Save fields at time ', REAL(vtime(jt_save),4), &
+                 ' | step = ', jt, ' of ', nt, &
+                 ' | progress = ', 100.0*REAL(jt)/REAL(nt), ' %'
+
 
          jt_save = jt_save + 1
       END IF
