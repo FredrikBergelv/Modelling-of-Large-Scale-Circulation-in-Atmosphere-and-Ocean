@@ -1,8 +1,47 @@
 \section{Experiments}
-\subsection{The rol of wave number}
+\subsection{The role of wave number}
 
-\textbf{i)} only theoretical
+\textbf{i)} We know that the width of the initial gaussian, $L_w$ is related to the wave number and Rossby radius as 
+$$L_w=1.3\frac{\pi}{kR}\frac{1}{\sqrt{5}}\frac{\sqrt{g\prime H}}{f_0}.$$
+Furthermore, from the theoretical solution we know the dispersion relation as \autoref{eq:dispersion}, where we observe that without the topography and a wave solution in the $x$-direction, gives $\omega=0$ at $kR=\pm 1$. From this we can sample 6 points as  
+\begin{table}[h]
+\centering
+\begin{tabular}{c c c c}
+\hline
+$kR$ & $L_w$ (km) & \% of domain \\
+\hline
+0.50 & 723.61 & 10.3372 \\
+1.00 & 361.80 & 5.1686 \\
+1.73 & 209.13 & 2.9876 \\
+3.00 & 120.60 & 1.7229 \\
+5.00 & 72.36 & 1.0337 \\
+7.00 & 51.69 & 0.7384 \\
+\hline
+\end{tabular}
+\caption{This table displays the $kR$-points which were selected for analysis, their corresponding $L_w$ and that $L_w$ expressed as a presented of the domain length (\SI{7e6}{\meter}).}
+\label{tab:MyPoints}
+\end{table}
 
-\textbf{ii)} Only theoretical
+The points in \autoref{tab:MyPoints} were selected to sample as many points from the theoretical shape (which can be seen in \autoref{fig:dispersion}). Since the dispersion relating is symmetric in the plus/minus domain, only positive points were chosen (since negative points would just give the antisymmetric speeds). The especially important points $[0.5,\ 1,\ 1.73,\ 3, \ 5, \ 7]$, which were argued from \autoref{eq:dispersion}. The point $kR=0.5$ was chosen since this corresponds to the long-wave limit, where we expect to see less dispersive waves which move more slowly. The point $k=\tfrac{1}{R}$ (i.e. $kR=1$) was chosen since at this point we expect to se a stationary wave packet. The point $kR=1.73$ was chosen since this is the point where we would observe the strongest eastward group velocity. The points $[3, \ 5, \ 7]$ were chosen to examine the short-wave limit were we expect to see a convergence towards stationary waves. 
 
-\textbf{iii)} \citep{Doos2022}
+\textbf{iii)} A Hovmöller diagram showcasing the wave for the different $kR$-point from \autoref{tab:MyPoints} can be seen in \autoref{fig:hovmöler}. There one can see the group-speed as the direction between the peaks and valleys. The phase speed can be seen as the temporal line of peaks from the initial position. One can observe good agreement from the values where $kR\geq1$. Especially good result can be observed when $kR=1$, where the theoretical and numerical phase/group-speeds really align. The point $kR=0.5$ clearly gave the worst result, where a large difference between the numerical and theoretical speeds can be observed. 
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[width=0.6\textwidth]{Figures/hovmöller.png}
+    \caption{This figure showcases the phase and group propagation for the different $kR$-point from \autoref{tab:MyPoints}.}
+    \label{fig:hovmöler}
+\end{figure}
+
+
+\textbf{ii, iv)} One can observe the differences between the numerical and theoretical phase/group speeds together with the theoretical curves in \autoref{fig:dispersion}. There one can observe more clearly the differences seen in \autoref{fig:hovmöler}. Again one can observe good agreement when $kR\geq1$ and bad agreement when $kR=0.5$. The reason for this long-wave mismatch can be described by the nature of long numerical Rossby waves. 
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[width=0.6\textwidth]{Figures/dispersion.png}
+    \caption{This figure shows the theoretical phase and group speeds together with the theoretical and numerical speeds for the $kR$-point from \autoref{tab:MyPoints}.}
+    \label{fig:dispersion}
+\end{figure}
+
+
+

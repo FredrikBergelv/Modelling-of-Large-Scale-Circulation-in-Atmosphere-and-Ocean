@@ -299,7 +299,7 @@ PROGRAM ST_VENANT
       ! 1/3 short-side basin width => Lw = 3
       ! TODO: wouldn't Lw = Lw * min(Lx, Ly) be easier to understand?
       ! TODO: use Lw as fraction of basin width instead?
-      Lw = min(Lx, Ly)/Lw
+      Lw = Lw*min(Lx, Ly)
       PRINT *, 'Width of gaussian is set to:', Lw
       PRINT *, 'Hight of gaussian is set to:', h0
 
@@ -321,6 +321,7 @@ PROGRAM ST_VENANT
          shifty = 0
       END IF
 
+
       !* Gaussian
       ! h(x,y) = h0 e^{ -( (x - x0)/(4 Sigma) )^2 - ( (y - y0)/(4 Sigma) )^2 }
       DO jj = 1, Ny
@@ -332,8 +333,9 @@ PROGRAM ST_VENANT
 
                IF (l_betaplane) then
                   ! geostrophic velocities
-                  u(ji, jj, 1) = -(g/((vy_t(jj) - shifty)*beta+f0)) * (-2.0*(vy_t(jj) - shifty)/(Lw**2) * h(ji, jj, 1))
-                  v(ji, jj, 1) =  (g/((vy_t(jj) - shifty)*beta+f0)) * (-2.0*(vx_t(ji) - shiftx)/(Lw**2) * h(ji, jj, 1))
+                  u(ji, jj, 1) = -(g/(vy_t(jj)*beta+f0)) * (-2.0*(vy_t(jj) - shifty)/(Lw**2) * h0*exp(-((vx_u(ji) - shiftx)/Lw)**2.-((vy_t(jj) - shifty)/Lw)**2.))
+                  
+                  v(ji, jj, 1) =  (g/(vy_t(jj)*beta+f0)) * (-2.0*(vx_t(ji) - shiftx)/(Lw**2) * h0*exp(-((vx_t(ji) - shiftx)/Lw)**2.-((vy_v(jj) - shifty)/Lw)**2.))
                else
                   ! geostrophic velocities
                   u(ji, jj, 1) = -(g/f0) * (-2.0*(vy_t(jj) - shifty)/(Lw**2) * h(ji, jj, 1))
