@@ -78,7 +78,7 @@ cbar = plt.colorbar(
     ax=ax,
     shrink=0.8,
     extend='both',
-    label=r"$h(x,y,t)$ [m]"
+    label=r"$\eta(x,y,t)$ [m]"
 )
 
 # --- UPDATE FUNCTION ---

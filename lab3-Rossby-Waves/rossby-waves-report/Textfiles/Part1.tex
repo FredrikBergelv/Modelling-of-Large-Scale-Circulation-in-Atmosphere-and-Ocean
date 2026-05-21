@@ -1,17 +1,63 @@
 \section{Theory}
+\textbf{i)} In order to study topographic Rossby waves one needs four critical assumptions; 
+\begin{enumerate}
+    \item Assumption that the potential vorticity, defined as 
+    \begin{equation}
+        \frac{D}{Dt}\left(P\right)=0 \text{ where } P=\frac{\xi+f}{h},
+    \end{equation}
+    is conserved. Above $\xi=\left(\tfrac{\partial v}{\partial x}-\tfrac{\partial u}{\partial y}\right)$ is the relative vorticity, $f$ is the Coriolis parameter and $h$ is the fluid depth. Conserved potential vorticity means that we neglect dissipation from e.g. friction. 
+    \item The beta-plane approximation, where we assume Coriolis changes with latitude as $f\approx f_0+\beta y$. Here $\beta$ is the linearized Coriolis parameter around a point $f_0$. We also need that $\tfrac{\beta y}{f}\ll1$, which is generally true.  The value of the beta plane can be found as $\beta=2\Omega\cos(\phi_0)/a$, where $\Omega$ is the angular rotation rate of the Earth and $a$ is the radius of the Earth.
+    \item A slowly varying bottom depth as $H(x,y)=H_0+\alpha y$, where $\tfrac{\alpha y}{H_0}\ll1$.
+    \item Quasi-geostrophy, i.e. that we are almost in geostrophy. This is the same as stating that the Rossby number $R=\tfrac{U}{fL}$ is small ($R\ll1$). Here $U$ is the characteristic flow speed and $L$ is the characteristic domain size. 
+\end{enumerate}
 
-The dispersion relation for a Rossby wave with meridional varying topography is 
+\textbf{ii)} Using the assumptions presented above, the dispersion relation for a Rossby wave with a meridionally varying topography can be derived as 
 \begin{equation}
-    \omega = -k\frac{\beta-\frac{f_0}{H_0}{\alpha}}{k^2+l^2+\frac{1}{R^2}}
+    \omega = -k\frac{\beta-\frac{f_0}{H_0}{\alpha}}{k^2+l^2+\frac{1}{R_d^2}},
     \label{eq:dispersion}
 \end{equation}
+where $k$ is the zonal wave number, $l$ is the meridional wave number and $R_d$ is the Rossby radius of deformation. Assuming no meridional waves ($l=0$), one can derive the zonal phase speed as 
+\begin{equation}
+    c_{p_x} = \frac{\omega}{k}=-\frac{\beta-\frac{f_0}{H_0}{\alpha}}{k^2+\frac{1}{R_d^2}},
+    \label{eq:phase}
+\end{equation}
+and the zonal group velocity as 
+\begin{equation}
+    c_{g_x} = \frac{\partial \omega}{\partial k}=\left(\beta-\frac{f_0}{H_0}{\alpha}\right)\frac{k^2-\frac{1}{R_d^2}}{\left(k^2+\frac{1}{R_d^2}\right)^2}.
+    \label{eq:group}
+\end{equation}
+Above one can observe a dispersive type of wave where the phase and group speeds are generally not the same. The dispersion is also dependant on the tilt, mean depth and Coriolis parameter as $-\tfrac{f_0}{H_0}{\alpha}$. It is also dependent on the beta-effect as $\beta$. The wave-numbers also appear beside the Rossby radius of deformation, meaning that this is the characteristic length-scale of the system. 
 
-\textbf{v)} The normal convergence-equation in the shallow water equations is 
+\textbf{iii)} Dispersion is simply the case when the phase speed is different from the group velocity. Another way of stating the same definition is that the wave is dispersive if there is a wave-number dependence in the phase speed, i.e. that different waves have different phase speeds. This is the same since both cases are true if the dispersion equation is not linear in $k$. Thus observing \autoref{eq:dispersion} one can see that this solution is dispersive, since the solution is not linear in $k$. The dispersive solution can also be observed by observing phase and group speeds not being the same. However, if one observes the long-wave limit $k\ll\tfrac{1}{R_d}$, then we see that \autoref{eq:dispersion} becomes linear in $k$. Thus the long-wave limit is non-dispersive. 
+
+\newpage
+\textbf{iv)} Varying the wave number $k$ can be done to characterize the length scale, i.e. the Rossby radius of deformation $R_d$. One can from this distinguish different cases. 
+\begin{enumerate}
+    \item \textbf{The long-wave limit:} The long-wave limit is when $k\ll\tfrac{1}{R_d}$, i.e. we have long wavelengths. Observing \autoref{eq:dispersion} one can see that in this limit, the denominator $k^2$ goes to zero. The dispersion relation thus becomes linear in $k$, and the phase and group speeds become the same
+    \begin{equation}
+        c_{p_x}=c_{g_x}= -\left(\beta-\frac{f_0}{H_0}{\alpha}\right)R_d^2.
+    \end{equation}
+    One can furthermore note that if the topographic effect is less than the beta-effect, then we get non-dispersive movement towards the West. 
+
+    \item \textbf{The short-wave limit:} The short-wave limit is when $k\gg\tfrac{1}{R_d}$, i.e. we have very short wavelengths. Observing \autoref{eq:dispersion} one can see that the $\tfrac{1}{R_d^2}$ becomes irrelevant. One can thus obtain the phase and group speeds as 
+    \begin{equation}
+        c_{p_x}= -\frac{\beta-\frac{f_0}{H_0}\alpha}{k^2}  \quad c_{g_x}=\frac{\beta-\frac{f_0}{H_0}\alpha}{k^2}.
+    \end{equation}
+    Here one can see that the wave-packet will propagate to the East, while the phase speeds propagate to the West. However, since we assumed that the wave number is really large we can see that both the phase and group speeds go to zero, i.e. $c_{p_x}\rightarrow0$ and $c_{g_x}\rightarrow0$ when $k\rightarrow\infty$.
+
+    \item \textbf{The eddy limit:} The final case is when $k=\tfrac{1}{R_d}$, or $kR_d=1$. Here we can rewrite the phase and group velocities as 
+    \begin{equation}
+        c_{p_x}= -\left(\beta-\frac{f_0}{H_0}\alpha\right)\frac{R_d^2}{2}  \quad c_{g_x}=0.
+    \end{equation}
+    Here one can see that the group velocity becomes zero, i.e. that we have a stationary wave-packet. However, the phase speed is not zero, meaning that the wave-packet will move internally. 
+\end{enumerate}
+
+\textbf{v)} The normal convergence equation in the shallow water equations is 
 \begin{equation}
     \frac{\partial \eta}{\partial t} + \frac{\partial (uh)}{\partial x} + \frac{\partial (vh)}{\partial y} = 0.
 \label{eq:convergence}
 \end{equation}
-Normally we use that $h=H_0+\eta$, where $\eta\ll H_0$. But now we instead use a varying topography with $h=H_0+\alpha y + \eta$, where $\eta\ll H_0$ and $\alpha y \ll H_0$. Using this on \autoref{eq:convergence} we obtain
+Normally we use that $h=H_0+\eta$, where $\eta\ll H_0$. But now we instead use a varying topography with $h=H_0+\alpha y + \eta$, where $\eta\ll H_0$ and $\alpha y \ll H_0$. Using this on \autoref{eq:convergence} we obtain a new convergence equation as
 \begin{equation}
 \implies
 \frac{\partial \eta}{\partial t}
@@ -33,3 +79,18 @@ H_0
 }_{\text{new topographic terms}}
 =0.
 \end{equation}
+Thus when solving for $\tfrac{\partial \eta}{\partial t}$ we get three new terms, $-\alpha y\frac{\partial u}{\partial x}$, $-\alpha y \frac{\partial v}{\partial y}$ and $-\alpha v$ on the right-hand side. 
+
+
+\textbf{vi)} Observing \autoref{eq:convergence}--\ref{eq:group} one can see that the beta-effect is cancelled when 
+\begin{equation}
+    \beta=\frac{f_0}{H_0}{\alpha}.
+\end{equation}
+If one has a beta value \SI{2e-11}{\per\second\per\meter}, a Coriolis parameter of \SI{1e-4}{\per\second} and a mean depth of \SI{4000}{\meter} one obtains an $\alpha$-value of \SI{8e-4}{\per\meter}.
+
+\newpage
+\textbf{vii)} Reduced gravity is an essential tool to get more physically realistic solutions. Previously, the Rossby radius of deformation was here defined as 
+$$R_d\equiv \frac{\sqrt{g\prime H}}{f_0}.$$
+If one was to compute the Rossby radius of deformation with some common parameters such as $H=\SI{4000}{\meter}$, $f_0=\SI{1e-4}{\per\second}$ and a normal gravity of $g=\SI{9.82}{\meter\per\second\squared}$, one would obtain a Rossby radius of almost \SI{2000}{\kilo\meter}, which is more than the distance from Stockholm to Istanbul! Thus this is a highly unrealistic value. If one instead uses a reduced gravity of $g\prime=\SI{0.0981}{\meter\per\second\squared}$ one gets a radius of \SI{200}{\kilo\meter}, which is far more realistic.
+
+Furthermore, most Rossby waves in the oceans and the atmosphere are baroclinic and not barotropic. This is because the temperature/density varies with depth/altitude. Thus it is more realistic to consider a baroclinic scenario, rather than a barotropic one. 

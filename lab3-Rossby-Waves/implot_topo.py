@@ -28,7 +28,7 @@ times = [0, 24*10, 24*20, 24*30]   # hours
 vmin = -1
 vmax = 5
 
-levels = np.linspace(vmin, vmax, 22)
+levels = np.linspace(vmin, vmax, 1000)
 
 # quiver density
 skip = 6
@@ -95,6 +95,7 @@ for j, name in enumerate(data):
             vmax=vmax,
             extend="both"
         )
+        
 
         # ---- contour lines (optional but nice) ----
 
@@ -125,15 +126,11 @@ for j, name in enumerate(data):
 
         if j == 0:
             ax.set_title(
-                f"t = {tt/24:.0f}"
+                f"t = {tt/24:.0f} d"
             )
 
         if i == 0:
-            ax.set_ylabel(
-                rf"$\mathbf{{\alpha={alpha:.2e}}}$",
-                fontsize=11,
-                rotation=65
-            )
+            ax.set_ylabel("y [km]")
 
         if j == len(data)-1:
             ax.set_xlabel("x [km]")
@@ -141,7 +138,7 @@ for j, name in enumerate(data):
         ax.set_aspect("auto")
         
         u_i0, v_i0 = compute_uv(us, vs)
-        step = 10
+        step = 5
         Q = ax.quiver(
             X[::step, ::step],
             Y[::step, ::step],
@@ -151,7 +148,21 @@ for j, name in enumerate(data):
             scale= 0.1,
             alpha=0.4,
             width=0.004
-)
+        )
+        
+        ax.set_xlim(2500, 4500)
+        ax.set_ylim(-530, 530)
+        
+        if i == 0:
+            ax.text(
+                0.02, 0.95,
+                rf"$\alpha={alpha:.2e}$",
+                transform=ax.transAxes,
+                fontsize=11,
+                va="top",
+                ha="left",
+                bbox=dict(facecolor="white", alpha=0.7, edgecolor="none")
+            )
 
 
 # ============================================================
@@ -160,9 +171,10 @@ for j, name in enumerate(data):
 
 cbar = fig.colorbar(
     cf,
+    ticks=[-1,0,1,2,3,4,5],
     ax=axes,
     orientation="vertical",
-    fraction=0.02,
+    fraction=0.01,
     pad=0.02
 )
 
@@ -176,8 +188,6 @@ plt.suptitle(
     "Rossby Waves over Sloping Topography",
     fontsize=16
 )
-plt.yticks(rotation=30)
-#plt.tight_layout()
 
 save_name = "topography_contours"
 

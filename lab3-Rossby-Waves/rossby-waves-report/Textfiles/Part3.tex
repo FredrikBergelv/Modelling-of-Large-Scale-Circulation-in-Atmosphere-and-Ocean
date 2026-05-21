@@ -1,7 +1,29 @@
+\newpage
 \subsection{The role of topography}
 
-\textbf{i)} Choose a $kR$ where we see stuff, i.e. do not choose extremes. 
+\textbf{i)} Choosing $kR_d=1.73$ and introducing topography as $H(y)=\alpha y + H_0$ gives the result seen in \autoref{fig:hovmöller_topo}. For the case when $\alpha=0$ one can see an East-moving wave-packet and Westward phase, as expected from the theory. When $\alpha$ was increased to \SI{2.29e-4}{\per\meter} and \SI{4.58e-4}{\per\meter} one can observe less propagation on the same timespan, still with Westward phase and Eastward group velocity. However, when the topography tilts in the opposing way, $\alpha=\SI{-2.29e-4}{\per\meter}$, we see an even faster moving wave compared to when there was no topography. This makes sense, since a negative tilt would only increase the "observed beta-effect". When $\alpha=\SI{8e-4}{\per\meter}$ nothing moves, as expected from the theory. More interestingly, one can observe a Westward group velocity and Eastward phase when the $\alpha$-value was set to be above the cancelling $\alpha$-value.
 
-\textbf{ii)} Do a normal contour-plot. for the different $\alpha$. 
+\begin{figure}[H]
+    \centering    
+    \includegraphics[width=0.6\textwidth]{Figures/hovmöller_topo.png}
+    \caption{This figure shows the topographic Rossby waves for $kR_d=1.73$ as Hovmöller diagrams.}
+    \label{fig:hovmöller_topo}
+\end{figure}
 
-\textbf{iii)}
+\textbf{ii)} The same result observed in \autoref{fig:hovmöller_topo} can be seen for the entire domain in \autoref{fig:topography_contours}. There one can see results for the initial condition, 10 days, 20 days, and 30 days. An interesting observation is that even though setting $\alpha=\SI{8e-4}{\per\meter}$, the edges of the initial perturbation can still be seen to move due to the beta-effect.
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[width=\textwidth]{Figures/topography_contours.png}
+    \caption{This figure shows the contour plots of the Rossby waves in the $xy$-plane.}
+    \label{fig:topography_contours}
+\end{figure}
+
+\textbf{iii)} In \autoref{fig:dispersion_topo} one can observe the phase and group speeds like in question 2.iv. Here one can see that a negative $\alpha$-value made stronger velocities, with a similar accuracy to the non-topographic curve. The middle plot with $\alpha=\SI{4.58e-4}{\per\meter}$ showed damped speeds compared to the non-topographic curve, again with similar accuracy. The $\alpha$-value with a higher value than the cancelling $\alpha$-value showed inverse speeds compared to the others. Here the accuracy of the numerical code was, however, also worse, although the signs were still correct. One reason for this might be that this is a really big $\alpha$-value. Before it was assumed that $\alpha y \ll H_0$, but here we have $\tfrac{\alpha y}{H_0}\sim 0.8$ at the ends of the domain! Thus this assumption is no longer valid. Thus we can experience errors in this approximation.
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[width=\textwidth]{Figures/dispersion_topo.png}
+    \caption{This figure showcases the phase and group velocities for a few different $\alpha$-values, compared to $\alpha=0$. The $\alpha=0$-line is always the orange one in all subfigures.}
+    \label{fig:dispersion_topo}
+\end{figure}

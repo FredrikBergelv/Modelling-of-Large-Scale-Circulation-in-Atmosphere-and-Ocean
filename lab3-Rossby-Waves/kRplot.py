@@ -33,28 +33,36 @@ def group_theo(kR):
     k = kR / R
     return  beta * (k**2 - 1/(R**2)) / ((k**2 + 1/(R**2))**2)
 
-def phase(hy):
-    x_pos = []
+def phase(hy, k_target):
+
+    x = hy.x.values
+    t = 3600 * hy.time.values
+
+    phases = []
 
     for tt in hy.time:
-        slice_t = hy.sel(time=tt)
 
-        # location of max amplitude
-        x_max = slice_t.x.where(slice_t == slice_t.max(), drop=True).values
+        hslice = hy.sel(time=tt).values
 
-        x_pos.append(x_max[0])
+        # FFT
+        H = np.fft.fft(hslice)
 
+        # corresponding wavenumbers
+        kfft = 2*np.pi*np.fft.fftfreq(len(x), d=(x[1]-x[0]))
 
-    x_pos = np.array(x_pos)
+        # closest spectral mode
+        idx = np.argmin(np.abs(kfft - k_target))
 
-    # remove NaNs
-    valid = ~np.isnan(x_pos)
-    t_valid = 3600*t.values[valid] # Note, convert to seconds
-    x_valid = x_pos[valid]
+        # phase of Fourier coefficient
+        phases.append(np.angle(H[idx]))
 
-    # linear fit → phase speed
-    cp = np.polyfit(t_valid, x_valid, 1)[0]
-    
+    phases = np.unwrap(phases)
+
+    # linear fit phase(t)
+    omega_num = -np.polyfit(t, phases, 1)[0]
+
+    cp = omega_num / k_target
+
     return cp
     
 
@@ -71,28 +79,64 @@ def group(hy):
     # ---- find smallest value over ALL time ----
     hmin = hy.values.min()
 
-    # find where that minimum occurs (first occurrence)
-    idx = np.argwhere(hy.values == hmin)[0]
-    it_min = idx[0]
-    ix_min = idx[1]
+    if hmin < -0.5:
+        # find where that minimum occurs (first occurrence)
+        idx = np.argwhere(hy.values == hmin)[0]
+        it_min = idx[0]
+        ix_min = idx[1]
 
-    x1 = x[ix_min]
-    t1 = t[it_min]
+        x1 = x[ix_min]
+        t1 = t[it_min]
 
-    # ---- convert time ----
-    try:
-        t0 = 0
-        t1 = (t1 - t[0]) / np.timedelta64(1, "s")
-    except:
-        t0 = 0
+        # ---- convert time ----
+        try:
+            t0 = 0
+            t1 = (t1 - t[0]) / np.timedelta64(1, "s")
+        except:
+            t0 = 0
 
-    # ---- dx/dt ----
-    dx = x1 - x0
-    dt = t1 - t0
+        # ---- dx/dt ----
+        dx = x1 - x0
+        dt = t1 - t0
 
-    c = dx / dt
+        c = dx / dt
 
-    return c
+        return c
+    else:
+        return group_polyfit(hy)
+
+def group_polyfit(hy):
+
+    x = hy.x.values
+    t = 3600 * hy.time.values
+
+    centers = []
+
+    # remove time mean (VERY important)
+    h_prime = hy - hy.mean(dim="time")
+
+    for tt in hy.time:
+
+        hslice = h_prime.sel(time=tt).values
+
+        # energy-like weight (variance contribution)
+        w = hslice**2
+
+        # avoid division errors
+        if np.sum(w) == 0:
+            centers.append(np.nan)
+            continue
+
+        xc = np.sum(x * w) / np.sum(w)
+        centers.append(xc)
+
+    centers = np.array(centers)
+
+    valid = ~np.isnan(centers)
+
+    cg = np.polyfit(t[valid], centers[valid], 1)[0]
+
+    return cg
 
 
 
@@ -111,7 +155,8 @@ for (data_name, kR) in data:
     hy = h.sel(y=h.y.mean(), method="nearest")
 
     # Obtain phase and group speeds
-    cp = phase(hy)
+    k = kR/R
+    cp = phase(hy, k)
     cg = group(hy)
     
     phases.append(cp)
