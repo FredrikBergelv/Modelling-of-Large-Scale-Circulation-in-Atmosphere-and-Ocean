@@ -86,6 +86,7 @@ PROGRAM ST_VENANT
    LOGICAL :: l_gaussian_south = .TRUE.   ! Should we use a gaussian at southern border?
    LOGICAL :: l_geostrophy = .TRUE.   
    LOGICAL :: l_stepfunction = .TRUE.     ! Should we use a step function as initial condition?
+   LOGICAL :: l_stepfunction_NS = .TRUE.  ! Should we use a step function in NS as initial condition?
    LOGICAL :: l_energy = .TRUE.           ! Should we compute the energy of the system?
    LOGICAL :: l_energyij = .TRUE.         ! Should we compute the energy of the system at each point?
    CHARACTER(LEN=256) :: data_name = 'data'
@@ -117,7 +118,7 @@ PROGRAM ST_VENANT
    & l_topography, depth_diff, &
    & l_energy, l_energyij
    NAMELIST /ninitial/ &
-   & h0, l_gaussian, l_gaussian_south, Lw, l_geostrophy, l_stepfunction
+   & h0, l_gaussian, l_gaussian_south, Lw, l_geostrophy, l_stepfunction, l_stepfunction_NS
    NAMELIST /nnumerics/ &
    & rcfl, gamma
    NAMELIST /nboundaries/ &
@@ -361,6 +362,9 @@ PROGRAM ST_VENANT
    ELSE IF (l_stepfunction) THEN
       h(1:Nx/2, :, 1) = -h0
       h(Nx/2 + 1:Nx, :, 1) = h0
+   ELSE IF (l_stepfunction_NS) THEN
+       h(:, 1:Ny/2, 1) = -h0
+       h(:, Ny/2 + 1:Ny, 1) = h0
    END IF
 
    ! Saving initial condition:

@@ -3,7 +3,8 @@
 
 \textbf{i)} We know that the width of the initial Gaussian, $L_w$ is related to the wave number and Rossby radius as 
 $$L_w=1.3\frac{\pi}{kR_d}\frac{1}{\sqrt{5}}\frac{\sqrt{g\prime H}}{f_0}.$$
-Furthermore, from the theoretical solution we know the dispersion relation as \autoref{eq:dispersion}, where we observe that without the topography and a wave solution in the $x$-direction, gives $\omega=0$ at $kR_d=\pm 1$. From this we can sample 6 points as  
+Using this \autoref{tab:MyPoints} could be created.
+
 \begin{table}[h]
 \centering
 \begin{tabular}{c c c c}
@@ -22,7 +23,7 @@ $kR_d$ & $L_w$ (km) & \% of domain \\
 \label{tab:MyPoints}
 \end{table}
 
-The points in \autoref{tab:MyPoints} were selected to sample as many points from the theoretical shape (which can be seen in \autoref{fig:dispersion}). Since the dispersion relation is symmetric in the plus/minus domain, only positive points were chosen (since negative points would just give the antisymmetric speeds). The especially important points $[0.5,\ 1,\ 1.73,\ 3, \ 5, \ 7]$, were argued from \autoref{eq:dispersion}. The point $kR_d=0.5$ was chosen since this corresponds to the long-wave limit, where we expect to see less dispersive waves which move more slowly. The point $k=\tfrac{1}{R}$ (i.e. $kR_d=1$) was chosen since at this point we expect to see a stationary wave packet. The point $kR_d=1.73$ was chosen since this is the point where we would observe the strongest eastward group velocity. The points $[3, \ 5, \ 7]$ were chosen to examine the short-wave limit where we expect to see a convergence towards stationary waves. 
+The points in \autoref{tab:MyPoints} were selected to sample as many points from the theoretical shape (which can be seen in \autoref{fig:dispersion}). Since the dispersion relation is symmetric in the plus/minus domain, only positive points were chosen (since negative points would just give the antisymmetric speeds). The especially important points $[0.5,\ 1,\ 1.73,\ 3, \ 5, \ 7]$, were argued from \autoref{eq:dispersion}. The point $kR_d=0.5$ was chosen since this corresponds to the long-wave limit, where we expect to see less dispersive waves which move more slowly. The point $k=\tfrac{1}{R}$ (i.e. $kR_d=1$) was chosen since at this point we expect to see a stationary wave packet, as seen in \autoref{eq:group} where this gives $c_{g_x}=0$. The point $kR_d=1.73$ was chosen since this is the point where we would observe the strongest eastward group velocity. The points $[3, \ 5, \ 7]$ were chosen to examine the short-wave limit where we expect to see a convergence towards stationary, non propagating waves. 
 
 \textbf{iii)} A Hovmöller diagram showcasing the wave for the different $kR_d$-points from \autoref{tab:MyPoints} can be seen in \autoref{fig:hovmöler}. There one can see the group speed as the direction between the peaks and valleys. The phase speed can be seen as the temporal line of peaks from the initial position. One can observe good agreement from the values where $kR_d\geq1$. Especially good results can be observed when $kR_d=1$, where the theoretical and numerical phase/group speeds really align. The point $kR_d=0.5$ clearly gave the worst result, where a large difference between the numerical and theoretical speeds can be observed. 
 

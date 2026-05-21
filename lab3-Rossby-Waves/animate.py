@@ -110,6 +110,6 @@ ani = animation.FuncAnimation(
 )
 
 # Save
-ani.save("plots/animation.gif", writer="pillow", fps=20)
+ani.save("plots/animation2.gif", writer="pillow", fps=20)
 
-print("Animation saved as 'plots/animation.gif'")
+print("Animation saved as 'plots/animation2.gif'")
