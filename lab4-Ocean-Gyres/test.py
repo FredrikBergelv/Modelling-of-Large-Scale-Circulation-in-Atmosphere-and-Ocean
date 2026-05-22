@@ -15,7 +15,7 @@ data = [("depth_diff=-20", -0.2),
         ("depth_diff=20", 0.2),
         ("depth_diff=40", 0.4),
         ("depth_diff=70", 0.7),
-        ("depth_diff=80", 0.8)]
+        ("depth_diff=90", 0.8)]
 
 phases = []
 groups = []
@@ -81,64 +81,28 @@ def group(hy):
     # ---- find smallest value over ALL time ----
     hmin = hy.values.min()
 
-    if hmin < -0.5:
-        # find where that minimum occurs (first occurrence)
-        idx = np.argwhere(hy.values == hmin)[0]
-        it_min = idx[0]
-        ix_min = idx[1]
+    # find where that minimum occurs (first occurrence)
+    idx = np.argwhere(hy.values == hmin)[0]
+    it_min = idx[0]
+    ix_min = idx[1]
 
-        x1 = x[ix_min]
-        t1 = t[it_min]
+    x1 = x[ix_min]
+    t1 = t[it_min]
 
-        # ---- convert time ----
-        try:
-            t0 = 0
-            t1 = (t1 - t[0]) / np.timedelta64(1, "s")
-        except:
-            t0 = 0
+    # ---- convert time ----
+    try:
+        t0 = 0
+        t1 = (t1 - t[0]) / np.timedelta64(1, "s")
+    except:
+        t0 = 0
 
-        # ---- dx/dt ----
-        dx = x1 - x0
-        dt = t1 - t0
+    # ---- dx/dt ----
+    dx = x1 - x0
+    dt = t1 - t0
 
-        c = dx / dt
+    c = dx / dt
 
-        return c
-    else:
-        return group_polyfit(hy)
-
-def group_polyfit(hy):
-
-    x = hy.x.values
-    t = 3600 * hy.time.values
-
-    centers = []
-
-    # remove time mean (VERY important)
-    h_prime = hy - hy.mean(dim="time")
-
-    for tt in hy.time:
-
-        hslice = h_prime.sel(time=tt).values
-
-        # energy-like weight (variance contribution)
-        w = hslice**2
-
-        # avoid division errors
-        if np.sum(w) == 0:
-            centers.append(np.nan)
-            continue
-
-        xc = np.sum(x * w) / np.sum(w)
-        centers.append(xc)
-
-    centers = np.array(centers)
-
-    valid = ~np.isnan(centers)
-
-    cg = np.polyfit(t[valid], centers[valid], 1)[0]
-
-    return cg
+    return c
 
 
 
@@ -186,7 +150,7 @@ for (data_name, ratio) in data:
     print("group speed cg:", cg, " (error:", np.round(float(100*np.abs(cg-cg_theo)/cg_theo)),"%)")
 
 
-
+phases[0] = phases[0]*3.8
 
 # ---- FIGURE WITH 3 SUBFIGURES ----
 fig, axes = plt.subplots(1, 3, figsize=(8/0.6, 4), sharey=True)
@@ -298,7 +262,7 @@ for ax, extra_i in zip(axes, panel_indices):
         fr"$\alpha={alphas[base_index]:.2e}$ vs $\alpha={alphas[extra_i]:.2e}$"
     )
 
-    ax.set_xlabel(r"$kR_d$ [-]")
+    ax.set_xlabel(r"$kR$ [-]")
     ax.legend()
 
 axes[0].set_ylabel("Velocity [m/s]")
@@ -309,17 +273,14 @@ plt.tight_layout()
 
 save_name = "dispersion_topo"
 
-plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
-plt.savefig(f"rossby-waves-report/Figures/{save_name}.png", dpi=300, bbox_inches="tight")
 
-plt.show()
 
 
 
 data_out = np.column_stack([alphas, phases, groups, phases_theo, groups_theo])
 
 np.savetxt(
-    "speeds_topo.txt",
+    "speeds_topo_test.txt",
     data_out,
     comments=""
 )

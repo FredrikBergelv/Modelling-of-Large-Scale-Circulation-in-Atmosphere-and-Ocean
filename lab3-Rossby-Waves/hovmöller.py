@@ -52,7 +52,7 @@ for i, (name, kR) in enumerate(data):
         cbar = fig.colorbar(im, ax=ax, orientation="vertical", pad=0.01)
         cbar.set_label(r"$\eta$ [m]")
 
-    ax.set_title(f"kR = {kR}")
+    ax.set_title(fr"$kR_d$ = {kR}")
 
     # ---- get velocities in h ----
     cp = cp_vals[i]*3600

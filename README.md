@@ -6,7 +6,7 @@ Numerical modelling projects developed as part of the large-scale atmosphere and
 - **Lab 1** — Geostrophic adjustment 
 - **Lab 2** — Kelvin waves 
 - **Lab 3** — Rossby waves 
-- **Lab 4** — Wind-driven ocean circulation (Stommel/Munk)
+- **Lab 4** — Wind-driven ocean circulation 
 
 The projects include numerical simulations in Fortran, visualisation scripts in Python, and short reports for analysing the model behaviour and physical interpretation.
 
