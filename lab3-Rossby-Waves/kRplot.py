@@ -226,6 +226,8 @@ for ph, gr, kr in zip(phases, groups, my_points):
 # Other stuff
 plt.hlines(0, min(kRs), max(kRs), color="black")
 plt.vlines(1, min_val, max_val, color="black", label=r"$R=k$", linestyle=":")
+plt.ylabel("Velocity [m/s]")
+plt.xlabel(r"$kR$ [-]")
 
 
 plt.legend()

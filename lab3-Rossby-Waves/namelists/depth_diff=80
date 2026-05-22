@@ -8,7 +8,7 @@ Ly = 7.E6                ! Width of domain in y [m]  1.e6 = 1000 km
 !!
 Tm_d = 30.                       ! Length of the run in days
 rfsave = 12                       ! Timestep at which to save fields in hours.
-data_name = 'data/depth_diff=80'          ! Name of folder to save
+data_name = 'data/depth_diff=90'          ! Name of folder to save
 /
 
 &nphysics

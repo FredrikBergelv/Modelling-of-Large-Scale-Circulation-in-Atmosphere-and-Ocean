@@ -16,7 +16,7 @@ data = [
     "depth_diff=20",
     "depth_diff=40",
     "depth_diff=70",
-    "depth_diff=90"
+    "depth_diff=80"
 ]
 
 times = [0, 24*10, 24*20, 24*30]   # hours
@@ -153,8 +153,8 @@ for j, name in enumerate(data):
         ax.set_xlim(2500, 4500)
         ax.set_ylim(-530, 530)
         
-        if i == 0:
-            ax.text(
+        
+        ax.text(
                 0.02, 0.95,
                 rf"$\alpha={alpha:.2e}$",
                 transform=ax.transAxes,

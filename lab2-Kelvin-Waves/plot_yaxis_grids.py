@@ -53,7 +53,7 @@ print(len(cases))
 
 def theo(h0, y, c, t, Lx, Ly, Ly_min):  
     
-    fix_factor =  np.sqrt(Ly/Ly_min)
+    fix_factor =  1
     print(fix_factor)
     Lx = Lx
     Ly = Ly
@@ -157,18 +157,18 @@ for j, (dataset,H,name) in enumerate(cases):
  
         # THEORY 
         if j==0 or j==int(len(cases)/2):
-            yh_theo = np.linspace(Ly_min/1000,Lx/1000,1000)
+            yh_theo = np.linspace(0,Lx/1000,1000)
             h_theo = theo(h0, yh_theo, c, t, Lx, Ly, Ly_min)
-            ax.plot(yh_theo/Ly_min, h_theo/h0, c=f"black", label=fr"Theo. modified", linestyle="--", alpha=0.8)
+            ax.plot(yh_theo/Ly_min, h_theo, c=f"black", label=fr"Theo. modified", linestyle="--", alpha=0.8)
             
-        ax.plot(yh/Ly_min, ht/h0, c=f"C{ic}", label=name)
+        ax.plot(yh/Ly_min, ht, c=f"C{ic}", label=name)
         
         ax.set_ylim(min_height, max_height)
         ax.set_ylabel(r"$\eta/h_0$ [-]")
         ax.grid(True, linestyle='--', alpha=0.6)
         
         ax.set_xlim(0, 0.05)
-        ax.set_ylim(0, 1.1)
+        ax.set_ylim(0, h0)
 
         if name_title =="Baltic":
             ax.set_xlabel(r"$y/y_\text{min}$")
@@ -177,8 +177,8 @@ for j, (dataset,H,name) in enumerate(cases):
     
 plt.tight_layout(rect=[0, 0, 1, 0.93])
 plt.suptitle(r"Time Evolution of Surface Height at $x=x_\text{peak}$", fontsize=16*(9/7)*(6/8))
-plt.savefig("plots/yaxis_grids.png", dpi=300)
-plt.savefig("kelvin-waves-report/Figures/yaxis_grids.png", dpi=300)
+#plt.savefig("plots/yaxis_grids.png", dpi=300)
+#plt.savefig("kelvin-waves-report/Figures/yaxis_grids.png", dpi=300)
 
 plt.show()
 

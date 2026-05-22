@@ -147,8 +147,8 @@ print(r"\end{table}")
 
 plt.tight_layout(rect=[0, 0, 1, 0.93])
 plt.suptitle(r"Zonal Cross Sections of Kelvin and Rossby Waves", fontsize=16)
-#plt.savefig("plots/eq_xaxis.png", dpi=300)
-#plt.savefig("kelvin-waves-report/Figures/eq_xaxis.png", dpi=300)
+plt.savefig("plots/eq_xaxis.png", dpi=300)
+plt.savefig("kelvin-waves-report/Figures/eq_xaxis.png", dpi=300)
 
 plt.show()
 

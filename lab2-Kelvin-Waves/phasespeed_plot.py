@@ -14,9 +14,9 @@ ha_1050 = load_h_data("atlantic_1050")
 ha_1200 = load_h_data("atlantic_1200")
 
 ha = [
-    [ha_100, 100, 1000, "Atlantic"],
+    #[ha_100, 100, 1000, "Atlantic"],
     [ha_200, 200, 1000, "Atlantic"],
-    [ha_300, 300, 1000, "Atlantic"],
+    #[ha_300, 300, 1000, "Atlantic"],
     [ha_450, 450, 1000, "Atlantic"],
     [ha_600, 600, 1000, "Atlantic"],
     [ha_750, 750, 1000, "Atlantic"],
@@ -40,9 +40,9 @@ hb_1050 = load_h_data("baltic_1050")
 hb_1200 = load_h_data("baltic_1200")
 
 hb = [
-    [hb_100, 100, 30, "Baltic"],
+    #[hb_100, 100, 30, "Baltic"],
     [hb_200, 200, 30, "Baltic"],
-    [hb_300, 300, 30, "Baltic"],
+    #[hb_300, 300, 30, "Baltic"],
     [hb_450, 450, 30, "Baltic"],
     [hb_600, 600, 30, "Baltic"],
     [hb_750, 750, 30, "Baltic"],
@@ -51,7 +51,7 @@ hb = [
     [hb_1200, 1200, 30, "Baltic"]
 ]
 
-grids_plot = np.array([100, 200, 300, 450, 600, 750, 900, 1050, 1200])
+grids_plot = np.array([200, 450, 600, 750, 900, 1050, 1200])
 
 hs = [ha,hb]
 
@@ -199,7 +199,7 @@ ax.set_title("Phase speed convergence", size=14)
 
 ax.legend()
 plt.tight_layout()
-plt.savefig("plots/phase.png", dpi=300)
-plt.savefig("kelvin-waves-report/Figures/phase.png", dpi=300)
+#plt.savefig("plots/phase.png", dpi=300)
+#plt.savefig("kelvin-waves-report/Figures/phase.png", dpi=300)
 
 plt.show()

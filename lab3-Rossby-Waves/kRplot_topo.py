@@ -15,7 +15,7 @@ data = [("depth_diff=-20", -0.2),
         ("depth_diff=20", 0.2),
         ("depth_diff=40", 0.4),
         ("depth_diff=70", 0.7),
-        ("depth_diff=90", 0.8)]
+        ("depth_diff=80", 0.8)]
 
 phases = []
 groups = []

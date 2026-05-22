@@ -47,7 +47,7 @@ def theo_h(h0, x, y, t, c=c):
 def theo_u(h0, x, y, t, c=c):    
     b = 2e-11             # Coriolis parameter [1/s]
     Lw = Lx / 10
-    R = np.sqrt(c / (2*b))
+    R = np.sqrt(c / b)
     y = y*1000 - Ly/2 #convert to m
     t = t*3600 # Convert to s
 

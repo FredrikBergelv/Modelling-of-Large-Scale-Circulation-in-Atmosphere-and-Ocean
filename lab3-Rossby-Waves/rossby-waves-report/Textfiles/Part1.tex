@@ -7,7 +7,7 @@
     \end{equation}
     is conserved. Above $\xi=\left(\tfrac{\partial v}{\partial x}-\tfrac{\partial u}{\partial y}\right)$ is the relative vorticity, $f$ is the Coriolis parameter and $h$ is the fluid depth. Conserved potential vorticity means that we neglect dissipation from e.g. friction. 
     \item The beta-plane approximation, where we assume Coriolis changes with latitude as $f\approx f_0+\beta y$. Here $\beta$ is the linearized Coriolis parameter around a point $f_0$. We also need that $\tfrac{\beta y}{f}\ll1$, which is generally true.  The value of the beta plane can be found as $\beta=2\Omega\cos(\phi_0)/a$, where $\Omega$ is the angular rotation rate of the Earth and $a$ is the radius of the Earth.
-    \item A slowly varying bottom depth as $H(x,y)=H_0+\alpha y$, where $\tfrac{\alpha y}{H_0}\ll1$.
+    \item A slowly varying bottom depth as $H(x,y)=H_0+\alpha y$, where $\tfrac{\alpha y}{H_0}\ll1$. Note that that this can be neglected if one wants to study normal, non-topographic, Rossby waves.
     \item Quasi-geostrophy, i.e. that we are almost in geostrophy. This is the same as stating that the Rossby number $R=\tfrac{U}{fL}$ is small ($R\ll1$). Here $U$ is the characteristic flow speed and $L$ is the characteristic domain size. 
 \end{enumerate}
 
@@ -28,7 +28,7 @@ and the zonal group velocity as
 \end{equation}
 Above one can observe a dispersive type of wave where the phase and group speeds are generally not the same. The dispersion is also dependant on the tilt, mean depth and Coriolis parameter as $-\tfrac{f_0}{H_0}{\alpha}$. It is also dependent on the beta-effect as $\beta$. The wave-numbers also appear beside the Rossby radius of deformation, meaning that this is the characteristic length-scale of the system. 
 
-\textbf{iii)} Dispersion is simply the case when the phase speed is different from the group velocity. Another way of stating the same definition is that the wave is dispersive if there is a wave-number dependence in the phase speed, i.e. that different waves have different phase speeds. This is the same since both cases are true if the dispersion equation is not linear in $k$. Thus observing \autoref{eq:dispersion} one can see that this solution is dispersive, since the solution is not linear in $k$. The dispersive solution can also be observed by observing phase and group speeds not being the same. However, if one observes the long-wave limit $k\ll\tfrac{1}{R_d}$, then we see that \autoref{eq:dispersion} becomes linear in $k$. Thus the long-wave limit is non-dispersive. 
+\textbf{iii)} Dispersion is simply the case when the phase speed is different from the group velocity. Another way of stating the same definition is that the wave is dispersive if there is a wave-number dependence in the phase speed, i.e. that different waves have different phase speeds. This is the same since both cases are true if the dispersion equation is not linear in $k$. Thus observing \autoref{eq:dispersion} one can see that this solution is dispersive, since the solution is not linear in $k$. The dispersive solution can also be observed by observing that \autoref{eq:phase} and \autoref{eq:group} are not the same. However, if one observes the long-wave limit $k\ll\tfrac{1}{R_d}$, then we see that \autoref{eq:dispersion} becomes linear in $k$. Thus the long-wave limit is non-dispersive. 
 
 \newpage
 \textbf{iv)} Varying the wave number $k$ can be done to characterize the length scale, i.e. the Rossby radius of deformation $R_d$. One can from this distinguish different cases. 
