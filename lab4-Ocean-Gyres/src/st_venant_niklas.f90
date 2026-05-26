@@ -16,7 +16,7 @@
 !*                 (Edited Henrik Carlson, Autumn 2013)
 !*                 (Edited Sara Berglund & Aitor Aldama Campino, Spring 2017)
 !*                 (Edited Aitor Aldama Campino, Spring 2018)
-!*                 (Edited Ezra Eisbrenner, Autumn 2024)
+!*
 !*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 PROGRAM ST_VENANT
@@ -51,6 +51,7 @@ PROGRAM ST_VENANT
       & g = 9.81,         &        ! Gravity acceleration [m s^-2]
       & D = 4000.,        &        ! average depth [m]
       & f0 = 1.e-4,       &        ! Coriolis constant [s^-1] (only used if l_coriolis is set to true)
+      & beta = 2.31e-11,  &        ! Beta constant [s^-1 m^-1] (only used if l_beta is set to true)
       & rcfl = 0.3,       &        ! CFL criterion
       & gamma = 0.1,      &        ! Asselin coefficient
       & Lx = 5.*1e+7,     &        ! size of domain [m]
@@ -59,7 +60,9 @@ PROGRAM ST_VENANT
       & Lw = 20.,         &        ! Width of the gaussian (only used if l_gaussian is set to true)
       & G_scale = 0.25,   &        ! Gaussian scaling factor. Scales the shortest domain lenght
       & Tm_d = 10.,       &        ! length of the run in days
-      & rfsave = 1.                ! frequency at which to save fields in hours.
+      & rfsave = 1.,      &        ! frequency at which to save fields in hours.
+      & u0 = 10.,         &        ! mean flow [m s^-1]
+      & alp_t = 5.E-5              ! Topographic alpha []
    !!
    INTEGER ::             &
       & Nx = 100,         &        ! number of x T-points
@@ -69,6 +72,7 @@ PROGRAM ST_VENANT
    !!
    LOGICAL :: l_write_uv = .TRUE.         ! should we output U and V? H is always writen!
    LOGICAL :: l_coriolis = .TRUE.         ! should we include coriolis?
+   LOGICAL :: l_beta = .TRUE.             ! should we include the beta plane?
    LOGICAL :: l_solidbc = .TRUE.          ! Should we use solid bc?
    LOGICAL :: l_periodic = .TRUE.         ! Should we use periodic bc?
    LOGICAL :: l_up = .TRUE.               ! Should bc be periodic in u?
@@ -80,11 +84,16 @@ PROGRAM ST_VENANT
    LOGICAL :: l_step = .TRUE.             ! Should we use a step function as initial condition?
    LOGICAL :: l_energy = .TRUE.           ! Should we compute the energy of the system?
    LOGICAL :: l_energyij = .TRUE.         ! Should we compute the energy of the system at each point?
+   LOGICAL :: l_greduce = .TRUE.          ! should we include reduce gravity?
+   LOGICAL :: l_coast = .TRUE.            ! Should we introduce a coast?
+   LOGICAL :: l_geostrophy = .FALSE.      ! Should the initial condition be in geostrophy?
+   LOGICAL :: l_mean = .TRUE.             ! Should we include a mean flow?
+   LOGICAL :: l_topography = .TRUE.       ! Should we include an alpha plane?
    !! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    LOGICAL :: lexist
 
-   REAL    :: dx, dy, dt, ra
+   REAL    :: dx, dy, dt, ra, shiftx, shifty
    REAL(4)    :: tm ! length of the run in seconds...
 
    ! Define matrices that will be allocated later:
@@ -104,15 +113,15 @@ PROGRAM ST_VENANT
    NAMELIST /ngrid/ &
    & Nx, Ny, Lx, Ly, Tm_d, rfsave
    NAMELIST /nphysics/ &
-   & l_coriolis, f0, D, &
+   & l_greduce, l_coriolis, f0, l_beta, beta, l_topography, D, alp_t, l_mean, u0, &
    & l_energy, l_energyij
    NAMELIST /ninitial/ &
-   & h0, l_gaussian, Lw, l_step
+   & h0, l_gaussian, G_scale, Lw, l_step, l_geostrophy
    NAMELIST /nnumerics/ &
    & rcfl, gamma
    NAMELIST /nboundaries/ &
    & l_write_uv, l_solidbc, l_periodic, l_up, l_vp, l_spongebc, S, btype, &
-   & l_write_domain, l_alpha
+   & l_write_domain, l_alpha, l_coast
 
    !! Declarations are done, starting the program !
 
@@ -150,6 +159,11 @@ PROGRAM ST_VENANT
    END IF
 
    PRINT *, ''
+
+   !! Reduce gravity
+   IF (l_greduce) THEN
+      g = 0.01*g
+   END IF
 
    !! Time stuff
    !! ==========
@@ -234,6 +248,13 @@ PROGRAM ST_VENANT
 
    vtime(:) = (/((jt - 1)*rfsave, jt=1, nb_save)/) ! in hours !!!
 
+   !! Shift due to the beta plane or alpha plane
+   IF (l_beta .OR. l_topography .OR. .TRUE.) THEN
+      print *, 'shifting vy_t and vy_v'
+      vy_t = vy_t - 0.5*Ly
+      vy_v = vy_v - 0.5*Ly
+   END IF
+
    !! Building sponge.
 
    ALLOCATE (alpha_u(0:Nx, Ny))
@@ -252,20 +273,83 @@ PROGRAM ST_VENANT
       PRINT *, 'Initial condition is set as Guassian'
 
       !* Width of the gaussian
-      ! Gaussian width => Lw = 4 Sigma
-      ! Relative to short-side basin width
-      ! 1/3 short-side basin width => Lw = 3
-      Lw = min(Lx, Ly)/Lw
+      Lw = min(Lx, Ly) * G_scale
+    
       PRINT *, 'Width of gaussian is set to:', Lw
       PRINT *, 'Hight of gaussian is set to:', h0
+
+      !* Shift gaussian
+      IF (l_beta .OR. l_topography) THEN
+         shiftx = 0.5*Lx
+         shifty = 0.5
+      ELSE
+         shiftx = 0.5*Lx
+         shifty = 0.5*Ly
+      END IF
+
+      IF (l_coast .AND. btype == 2) THEN
+         shiftx = Lx
+         shifty = 0.5*Ly
+      ELSEIF (l_coast .AND. btype == 1) THEN
+         shiftx = 0.5*Lx
+         shifty = 0
+      END IF
 
       !* Gaussian
       ! h(x,y) = h0 e^{ -( (x - x0)/(4 Sigma) )^2 - ( (y - y0)/(4 Sigma) )^2 }
       DO jj = 1, Ny
          DO ji = 1, Nx
-            h(ji, jj, 1) = h0*exp(-((vx_t(ji) - 0.5*Lx)/Lw)**2.-((vy_t(jj) - 0.5*Ly)/Lw)**2.)
+            h(ji, jj, 1) = h0*exp(-((vx_t(ji) - shiftx)/Lw)**2.-((vy_t(jj) - shifty)/Lw)**2.)
          END DO
       END DO
+
+      IF (l_geostrophy) THEN
+         ! DEFINE U AND V IN GEOSTROPHIC BALANCE
+         ! v(x,y) = g/(4 Sigma)^2 (x - x0) h(x,y) / f
+         ! u(x,y) = g/(4 Sigma)^2 (y - y0) h(x,y) / f
+         DO ji = 1, Nx
+            DO jj = 1, Ny
+               IF (ji /= Nx) THEN
+                  u(ji, jj, 1) = (g/(Lw**2))*(vy_t(jj) - shifty)*(h(ji, jj, 1) + h(ji + 1, jj, 1))
+                  ! Can also be done using the analytical expression for h
+                  ! u(ji,jj,1) =   (g/(Lw**2))*(vy_t(jj)-shifty)*h0*exp(-((vx_u(ji)-shiftx)/Lw)**2.-((vy_t(jj)-shifty)/Lw)**2.)
+                  IF (l_beta) THEN
+                     u(ji, jj, 1) = u(ji, jj, 1)/(f0 + vy_t(jj)*beta)
+                  ELSE
+                     u(ji, jj, 1) = u(ji, jj, 1)/(f0)
+                  END IF
+               END IF
+               IF (jj /= Ny) THEN
+                  v(ji, jj, 1) = -(g/(Lw**2))*(vx_t(ji) - shiftx)*(h(ji, jj, 1) + h(ji, jj + 1, 1))
+                  ! Can also be done using the analytical expression for h
+                  ! v(ji,jj,1) = - (g/(Lw**2))*(vx_t(ji)-shiftx)*h0*exp(-((vx_t(ji)-shiftx)/Lw)**2.-((vy_v(jj)-shifty)/Lw)**2.)
+                  IF (l_beta) THEN
+                     v(ji, jj, 1) = v(ji, jj, 1)/(f0 + vy_v(jj)*beta)
+                  ELSE
+                     v(ji, jj, 1) = v(ji, jj, 1)/(f0)
+                  END IF
+               END IF
+            END DO
+         END DO
+
+         ! U AND V PERIODIC
+         IF (l_up .and. l_periodic) THEN
+            u(0, :, 1) = (g/(Lw**2))*(vy_t(:) - shifty)*(h(1, :, 1) + h(Nx, :, 1))
+            u(Nx, :, 1) = u(0, :, 1)
+
+            IF (l_beta) THEN
+               u(0, :, 1) = u(0, :, 1)/(f0 + (beta*vy_t(:)))
+               u(Nx, :, 1) = u(Nx, :, 1)/(f0 + (beta*vy_t(:)))
+            ELSE
+               u(0, :, 1) = u(0, :, 1)/(f0)
+               u(Nx, :, 1) = u(Nx, :, 1)/(f0)
+            END IF
+         END IF
+         IF (l_vp .and. l_periodic) THEN
+            v(:, 0, 1) = -(g/(Lw**2))*(vx_t(:) - shiftx)*(h(:, 1, 1) + h(:, Ny, 1))/(f0 + (beta*vy_v(0)))
+            v(:, Ny, 1) = v(:, 0, 1)
+         END IF
+      END IF
 
       !* Step function
    ELSE IF (l_step) THEN
@@ -273,10 +357,17 @@ PROGRAM ST_VENANT
       h(Nx/2 + 1:Nx, :, 1) = h0
    END IF
 
+   !! Apply coast
+   IF (l_coast) THEN
+      CALL APPLY_COAST()
+   END IF
+
    ! Saving initial condition:
    CALL WRITE_NC_2D(vx_t, vy_t, h(:, :, 1), 'data/h_init_cond.nc', 'h0')
 
    h_tmp(:, :, -1) = h(:, :, 1)
+   u_tmp(:, :, -1) = u(:, :, 1)
+   v_tmp(:, :, -1) = v(:, :, 1)
 
    ! jt_save are the writing time steps: h(:,:,jt_save), u(:,:,jt_save), v(:,:,jt_save)
    jt_save = 1; jt = 0
@@ -345,17 +436,66 @@ PROGRAM ST_VENANT
       Xdv(:, Ny) = Xdv(:, Ny) - g/dx*(h_tmp(:, 1, -1) - h_tmp(:, Ny, -1))
    END IF
 
+   ! Adding mean flow
+   ! ================
+   IF (l_mean) THEN
+      Xdu(1:Nx - 1, :) = Xdu(1:Nx - 1, :) - 0.5*u0/dx*(u_tmp(2:Nx, :, -1) - u_tmp(0:Nx - 2, :, -1))
+      Xdv(2:Nx - 1, :) = Xdv(2:Nx - 1, :) - 0.5*u0/dx*(v_tmp(3:Nx, :, -1) - v_tmp(1:Nx - 2, :, -1))
+
+      IF (l_up .and. l_periodic) THEN
+         Xdu(0, :) = Xdu(0, :) - 0.5*u0/dx*(u_tmp(1, :, -1) - u_tmp(Nx - 1, :, -1))
+         Xdu(Nx, :) = Xdu(Nx, :) - 0.5*u0/dx*(u_tmp(1, :, -1) - u_tmp(Nx - 1, :, -1))
+
+         Xdv(1, :) = Xdv(1, :) - 0.5*u0/dx*(v_tmp(2, :, -1) - v_tmp(Nx, :, -1))
+         Xdv(Nx, :) = Xdv(Nx, :) - 0.5*u0/dx*(v_tmp(1, :, -1) - v_tmp(Nx - 1, :, -1))
+      END IF
+
+   END IF
+
    ! Adding Coriolis
    ! ===============
    IF (l_coriolis) THEN
       ! Add Coriolis here
       Xdu(:, :) = Xdu(:, :) + f0*V_u(:, :)
       Xdv(:, :) = Xdv(:, :) - f0*U_v(:, :)
+
+      ! Add beta effect
+      IF (l_beta) THEN
+         DO jj = 0, Ny
+            IF (jj /= 0) THEN
+               Xdu(:, jj) = Xdu(:, jj) + beta*vy_t(jj)*V_u(:, jj)
+            END IF
+            Xdv(:, jj) = Xdv(:, jj) - beta*vy_v(jj)*U_v(:, jj)
+         END DO
+      END IF
    END IF
 
    ! Convergence/divergence
    ! ======================
    Xdh(:, :) = Xdh(:, :) - D*((u_tmp(1:Nx, :, -1) - u_tmp(0:Nx - 1, :, -1))/dx + (v_tmp(:, 1:Ny, -1) - v_tmp(:, 0:Ny - 1, -1))/dy)
+
+   ! Adding topography
+   ! =================
+   ! Xdh = Xdh - alpha y (du/dx + dv/dy) - alpha v
+   IF (l_topography) THEN
+      DO jj = 1, Ny
+         Xdh(:, jj) = Xdh(:, jj) - alp_t*vy_t(jj)*((u_tmp(1:Nx, jj, -1) - u_tmp(0:Nx - 1, jj, -1))/dx + (v_tmp(:, jj, -1) &
+         & - v_tmp(:, jj - 1, -1))/dy) - 0.5*alp_t*(v_tmp(:, jj, -1) + v_tmp(:, jj - 1, -1))
+      END DO
+   END IF
+
+   ! Mean flow
+   ! =========
+   IF (l_mean) THEN
+
+      Xdh(2:Nx - 1, :) = Xdh(2:Nx - 1, :) - 0.5*u0/dx*(h_tmp(3:Nx, :, -1) - h_tmp(1:Nx - 2, :, -1))
+
+      IF (l_up .and. l_periodic) THEN
+         Xdh(1, :) = Xdh(1, :) - 0.5*u0/dx*(h_tmp(2, :, -1) - h_tmp(Nx, :, -1))
+         Xdh(Nx, :) = Xdh(Nx, :) - 0.5*u0/dx*(h_tmp(1, :, -1) - h_tmp(Nx - 1, :, -1))
+      END IF
+
+   END IF
 
    ! Time step
    ! =========
@@ -371,6 +511,11 @@ PROGRAM ST_VENANT
    END IF
    IF (l_spongebc) THEN
       CALL APPLY_SPONGE_BC(jt_step=-1)
+   END IF
+
+   !! Apply coast
+   IF (l_coast) THEN
+      CALL APPLY_COAST()
    END IF
 
    PRINT *, 'Done with first Euler step.                  time step =', jt
@@ -440,18 +585,67 @@ PROGRAM ST_VENANT
          Xdv(:, Ny) = Xdv(:, Ny) - g/dx*(h_tmp(:, 1, 0) - h_tmp(:, Ny, 0))
       END IF
 
+      ! Adding mean flow
+      ! ================
+      IF (l_mean) THEN
+         Xdu(1:Nx - 1, :) = Xdu(1:Nx - 1, :) - 0.5*u0/dx*(u_tmp(2:Nx, :, 0) - u_tmp(0:Nx - 2, :, 0))
+         Xdv(2:Nx - 1, :) = Xdv(2:Nx - 1, :) - 0.5*u0/dx*(v_tmp(3:Nx, :, 0) - v_tmp(1:Nx - 2, :, 0))
+
+         IF (l_up .and. l_periodic) THEN
+            Xdu(0, :) = Xdu(0, :) - 0.5*u0/dx*(u_tmp(1, :, 0) - u_tmp(Nx - 1, :, 0))
+            Xdu(Nx, :) = Xdu(Nx, :) - 0.5*u0/dx*(u_tmp(1, :, 0) - u_tmp(Nx - 1, :, 0))
+
+            Xdv(1, :) = Xdv(1, :) - 0.5*u0/dx*(v_tmp(2, :, 0) - v_tmp(Nx, :, 0))
+            Xdv(Nx, :) = Xdv(Nx, :) - 0.5*u0/dx*(v_tmp(1, :, 0) - v_tmp(Nx - 1, :, 0))
+         END IF
+
+      END IF
+
       ! Adding Coriolis
       ! ===============
       IF (l_coriolis) THEN
          ! Add Coriolis here
          Xdu(:, :) = Xdu(:, :) + f0*V_u(:, :)
          Xdv(:, :) = Xdv(:, :) - f0*U_v(:, :)
+
+         IF (l_beta) THEN
+            DO jj = 0, Ny
+               IF (jj /= 0) THEN
+                  Xdu(:, jj) = Xdu(:, jj) + beta*vy_t(jj)*V_u(:, jj)
+               END IF
+               Xdv(:, jj) = Xdv(:, jj) - beta*vy_v(jj)*U_v(:, jj)
+            END DO
+         END IF
       END IF
 
       ! Convergence/divergence
       ! ======================
       Xdh(:, :) = Xdh(:, :) - D*((u_tmp(1:Nx, :, 0) - u_tmp(0:Nx - 1, :, 0))/dx + (v_tmp(:, 1:Ny, 0) - v_tmp(:, 0:Ny - 1, 0))/dy)
 
+      ! Adding topography
+      ! =================
+      IF (l_topography) THEN
+         DO jj = 1, Ny
+            Xdh(:, jj) = Xdh(:, jj) - alp_t*vy_t(jj)*((u_tmp(1:Nx, jj, 0) - u_tmp(0:Nx - 1, jj, 0))/dx + (v_tmp(:, jj, 0) &
+            & - v_tmp(:, jj - 1, 0))/dy) - 0.5*alp_t*(v_tmp(:, jj, 0) + v_tmp(:, jj - 1, 0))
+         END DO
+      END IF
+
+      ! Adding mean flow
+      ! ================
+      IF (l_mean) THEN
+
+         Xdh(2:Nx - 1, :) = Xdh(2:Nx - 1, :) - 0.5*u0/dx*(h_tmp(3:Nx, :, 0) - h_tmp(1:Nx - 2, :, 0))
+
+         IF (l_up .and. l_periodic) THEN
+            Xdh(1, :) = Xdh(1, :) - 0.5*u0/dx*(h_tmp(2, :, 0) - h_tmp(Nx, :, 0))
+            Xdh(Nx, :) = Xdh(Nx, :) - 0.5*u0/dx*(h_tmp(1, :, 0) - h_tmp(Nx - 1, :, 0))
+         END IF
+
+      END IF
+      do jj=1, Ny
+         Xdu(:,jj) = Xdu(:, jj) +  1.225 * 1.5 *0.001* 100 / ( rho * D) * sin(vy_t(jj) * PI / Ly)
+      enddo
       ! Time step
       ! =========
       u_tmp(:, :, 1) = u_tmp(:, :, -1) + Xdu(:, :)*2.*dt
@@ -460,8 +654,8 @@ PROGRAM ST_VENANT
 
       !! Applying Asselin filter:
       u_tmp(:, :, 0) = (1.-2.*gamma)*u_tmp(:, :, 0) + gamma*(u_tmp(:, :, 1) + u_tmp(:, :, -1))
-      v_tmp(:, :, 0) = (1.-2.*gamma)*v_tmp(:, :, 0) + gamma*(v_tmp(:, :, 1) + v_tmp(:, :, -1))
-      h_tmp(:, :, 0) = (1.-2.*gamma)*h_tmp(:, :, 0) + gamma*(h_tmp(:, :, 1) + h_tmp(:, :, -1))
+      v_tmp(:, :, 0) = (1.-2.*gamma)*v_tmp(:, :, 0) + gamma*(v_tmp(:, :, 1) + v_tmp(:, :, -1)) 
+      h_tmp(:, :, 0) = (1.-2.*gamma)*h_tmp(:, :, 0) + gamma*(h_tmp(:, :, 1) + h_tmp(:, :, -1)) 
 
       ! === Boundaries ===
       IF (l_solidbc) THEN
@@ -472,6 +666,11 @@ PROGRAM ST_VENANT
       END IF
       IF (l_spongebc) THEN
          CALL APPLY_SPONGE_BC()
+      END IF
+
+      !! Apply coast
+      IF (l_coast) THEN
+         CALL APPLY_COAST()
       END IF
 
       ! Re-arrange matrices
@@ -652,6 +851,20 @@ CONTAINS
       END IF
 
    END SUBROUTINE APPLY_PERIODIC_BC
+
+   SUBROUTINE APPLY_COAST()
+
+      IF (btype == 2) THEN
+         u_tmp(Nx - sx:Nx, :, :) = 0.
+         v_tmp(Nx - sx + 1:Nx, :, :) = 0.
+         h_tmp(Nx - sx + 1:Nx, :, :) = 0.
+      ELSEIF (btype == 1) THEN
+         u_tmp(:, 1:sy, :) = 0.
+         v_tmp(:, 0:sy, :) = 0.
+         h_tmp(:, 1:sy, :) = 0.
+      END IF
+
+   END SUBROUTINE APPLY_COAST
 
    SUBROUTINE COMPUTE_ENERGY()
 

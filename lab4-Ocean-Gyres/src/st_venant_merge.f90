@@ -16,6 +16,8 @@
 !*                 (Edited Henrik Carlson, Autumn 2013)
 !*                 (Edited Sara Berglund & Aitor Aldama Campino, Spring 2017)
 !*                 (Edited Aitor Aldama Campino, Spring 2018)
+!*                 (Edited Ezra Eisbrenner, Autumn 2024)
+!*                 (Edited Fredrik Bergelv, Spring 2026)
 !*
 !*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -89,6 +91,7 @@ PROGRAM ST_VENANT
    LOGICAL :: l_geostrophy = .FALSE.      ! Should the initial condition be in geostrophy?
    LOGICAL :: l_mean = .TRUE.             ! Should we include a mean flow?
    LOGICAL :: l_topography = .TRUE.       ! Should we include an alpha plane?
+   CHARACTER(LEN=256) :: data_name = 'data'
    !! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    LOGICAL :: lexist
@@ -111,9 +114,9 @@ PROGRAM ST_VENANT
 
    !! Defining namelist sections:
    NAMELIST /ngrid/ &
-   & Nx, Ny, Lx, Ly, Tm_d, rfsave
+   & Nx, Ny, Lx, Ly, Tm_d, rfsave, data_name
    NAMELIST /nphysics/ &
-   & l_greduce, l_coriolis, f0, l_beta, beta, l_topography, D, alp_t, l_mean, u0, &
+   & l_coriolis, f0, l_beta, beta, l_topography, D, alp_t, l_mean, u0, &
    & l_energy, l_energyij
    NAMELIST /ninitial/ &
    & h0, l_gaussian, G_scale, Lw, l_step, l_geostrophy
@@ -142,6 +145,13 @@ PROGRAM ST_VENANT
    PRINT *, 'Done reading namelist.'
    !! Namelist paramters are now known!
 
+   alp_t = alp_t*(2*D/Ly)
+
+   tau_w = 1.225*1.5*0.001*(u10**2)
+
+   ! Create output directory if it does not exist
+   CALL SYSTEM('mkdir -p ' // TRIM(data_name))
+
    dx = Lx/REAL(Nx)  !delta x
    dy = Ly/REAL(Ny)  !delta y
 
@@ -157,13 +167,12 @@ PROGRAM ST_VENANT
       Ny = Ny + S
       sy = S/2
    END IF
+   IF (l_spongebc .and. (btype == 0 .or. btype == 1) .and. l_gaussian_south) THEN
+      Ny = Ny + S/2
+      sy = S/2
+   END IF
 
    PRINT *, ''
-
-   !! Reduce gravity
-   IF (l_greduce) THEN
-      g = 0.01*g
-   END IF
 
    !! Time stuff
    !! ==========
@@ -217,12 +226,16 @@ PROGRAM ST_VENANT
    PRINT *, ' =============================================== '
    PRINT *, ' ============== Settings of model ============== '
    IF (l_coriolis) PRINT *, '  Coriolis is on'
+   IF (l_beta) PRINT *, '  Beta-plane appriximation is on'
+   IF (l_topography) PRINT *, '  Sloping topography is on and alpha = ', alp_t 
    IF (l_periodic) THEN
       IF (l_vp) PRINT *, '  Periodic boundary condition in N-S on'
       IF (l_up) PRINT *, '  Periodic boundary condition in E-W on'
    END IF
    IF (l_spongebc) PRINT *, '  Sponge boundary condition on.'
    IF (l_solidbc) PRINT *, '  Solid boundary condition on'
+   IF (l_coast) PRINT *, '  Solid boundary condition on'
+
    PRINT *, ' ================================================ '
    PRINT *, ''
 
@@ -248,15 +261,16 @@ PROGRAM ST_VENANT
 
    vtime(:) = (/((jt - 1)*rfsave, jt=1, nb_save)/) ! in hours !!!
 
-   !! Shift due to the beta plane or alpha plane
-   IF (l_beta .OR. l_topography) THEN
+
+   !! Shift due to the beta plane
+   IF (l_beta .OR. l_topography .OR. l_wind) THEN
       print *, 'shifting vy_t and vy_v'
       vy_t = vy_t - 0.5*Ly
       vy_v = vy_v - 0.5*Ly
    END IF
 
-   !! Building sponge.
 
+   !! Building sponge.
    ALLOCATE (alpha_u(0:Nx, Ny))
    ALLOCATE (alpha_v(Nx, 0:Ny))
 
@@ -265,15 +279,18 @@ PROGRAM ST_VENANT
    END IF
 
    PRINT *, 'Defining Initial condition'
+
+
+
    !* ====================================================
    !* === Initial condition ===
    !* ====================================================
    ! Gaussian initial perturbation in h:
-   IF (l_gaussian) THEN
+IF (l_gaussian) THEN
       PRINT *, 'Initial condition is set as Guassian'
 
       !* Width of the gaussian
-      Lw = min(Lx, Ly) * G_scale
+      Lw = min(Lx, Ly) * Lw
     
       PRINT *, 'Width of gaussian is set to:', Lw
       PRINT *, 'Hight of gaussian is set to:', h0
@@ -357,13 +374,13 @@ PROGRAM ST_VENANT
       h(Nx/2 + 1:Nx, :, 1) = h0
    END IF
 
-   !! Apply coast
+   !! Apply coast G_scale
    IF (l_coast) THEN
       CALL APPLY_COAST()
    END IF
 
    ! Saving initial condition:
-   CALL WRITE_NC_2D(vx_t, vy_t, h(:, :, 1), 'data/h_init_cond.nc', 'h0')
+   CALL WRITE_NC_2D(vx_t, vy_t, h(:, :, 1), TRIM(data_name)//'/h_init_cond.nc', 'h0')
 
    h_tmp(:, :, -1) = h(:, :, 1)
    u_tmp(:, :, -1) = u(:, :, 1)
@@ -458,7 +475,6 @@ PROGRAM ST_VENANT
       ! Add Coriolis here
       Xdu(:, :) = Xdu(:, :) + f0*V_u(:, :)
       Xdv(:, :) = Xdv(:, :) - f0*U_v(:, :)
-
       ! Add beta effect
       IF (l_beta) THEN
          DO jj = 0, Ny
@@ -497,6 +513,14 @@ PROGRAM ST_VENANT
 
    END IF
 
+   ! Adding wind stress
+   ! ================
+   IF (l_wind ) THEN
+      do jj=1, Ny
+         Xdu(:, jj) = Xdu(:, jj) + (tau_w / (rho*D)) * SIN(vy_t(jj) * PI / Ly)
+      end do
+   END IF
+
    ! Time step
    ! =========
    u_tmp(:, :, 0) = u_tmp(:, :, -1) + Xdu(:, :)*dt
@@ -512,13 +536,13 @@ PROGRAM ST_VENANT
    IF (l_spongebc) THEN
       CALL APPLY_SPONGE_BC(jt_step=-1)
    END IF
-
-   !! Apply coast
    IF (l_coast) THEN
       CALL APPLY_COAST()
    END IF
 
    PRINT *, 'Done with first Euler step.                  time step =', jt
+
+
 
    !****************  M A I N   T I M E   L O O P ******************************
 
@@ -644,6 +668,15 @@ PROGRAM ST_VENANT
 
       END IF
 
+      ! Adding wind stress
+      ! ================
+      IF (l_wind) THEN
+
+         do jj=1, Ny
+            Xdu(:, jj) = Xdu(:, jj) + (tau_w / (rho*D)) * SIN(vy_t(jj) * PI / Ly)
+         end do
+      END IF
+
       ! Time step
       ! =========
       u_tmp(:, :, 1) = u_tmp(:, :, -1) + Xdu(:, :)*2.*dt
@@ -652,8 +685,8 @@ PROGRAM ST_VENANT
 
       !! Applying Asselin filter:
       u_tmp(:, :, 0) = (1.-2.*gamma)*u_tmp(:, :, 0) + gamma*(u_tmp(:, :, 1) + u_tmp(:, :, -1))
-      v_tmp(:, :, 0) = (1.-2.*gamma)*v_tmp(:, :, 0) + gamma*(v_tmp(:, :, 1) + v_tmp(:, :, -1))
-      h_tmp(:, :, 0) = (1.-2.*gamma)*h_tmp(:, :, 0) + gamma*(h_tmp(:, :, 1) + h_tmp(:, :, -1))
+      v_tmp(:, :, 0) = (1.-2.*gamma)*v_tmp(:, :, 0) + gamma*(v_tmp(:, :, 1) + v_tmp(:, :, -1)) 
+      h_tmp(:, :, 0) = (1.-2.*gamma)*h_tmp(:, :, 0) + gamma*(h_tmp(:, :, 1) + h_tmp(:, :, -1)) 
 
       ! === Boundaries ===
       IF (l_solidbc) THEN
@@ -666,7 +699,7 @@ PROGRAM ST_VENANT
          CALL APPLY_SPONGE_BC()
       END IF
 
-      !! Apply coast
+
       IF (l_coast) THEN
          CALL APPLY_COAST()
       END IF
@@ -691,7 +724,12 @@ PROGRAM ST_VENANT
          END IF
          h(:, :, jt_save) = REAL(h_tmp(:, :, 0), 4)
 
-         PRINT *, 'Save fields at time', REAL(vtime(jt_save), 4), ' time step =', jt, ' of', nt
+         !PRINT *, 'Save fields at time', REAL(vtime(jt_save), 4), ' time step =', jt, ' of', nt, 100*REAL(jt,4)/REAL(nt, 4), '%'
+         WRITE(*,'(A,F8.2,A,I6,A,I6,A,F6.2,A)') &
+                 'Save fields at time ', REAL(vtime(jt_save),4), &
+                 ' | step = ', jt, ' of ', nt, &
+                 ' | progress = ', 100.0*REAL(jt)/REAL(nt), ' %'
+
 
          jt_save = jt_save + 1
       END IF
@@ -719,20 +757,20 @@ PROGRAM ST_VENANT
          sy = S/2
       END IF
 
-      CALL WRITE_NC(vx_t(1 + sx:Nx - sx), vy_t(1 + sy:Ny - sy), vtime, h(1 + sx:Nx - sx, 1 + sy:Ny - sy, :), 'data/h.nc', 'h')
+      CALL WRITE_NC(vx_t(1 + sx:Nx - sx), vy_t(1 + sy:Ny - sy), vtime, h(1 + sx:Nx - sx, 1 + sy:Ny - sy, :), TRIM(data_name)//'/h.nc', 'h')
 
       IF (l_write_uv) THEN
-         CALL WRITE_NC(vx_u(0 + sx:Nx - sx), vy_t(1 + sy:Ny - sy), vtime, u(0 + sx:Nx - sx, 1 + sy:Ny - sy, :), 'data/u.nc', 'u')
-         CALL WRITE_NC(vx_t(1 + sx:Nx - sx), vy_v(0 + sy:Ny - sy), vtime, v(1 + sx:Nx - sx, 0 + sy:Ny - sy, :), 'data/v.nc', 'v')
+         CALL WRITE_NC(vx_u(0 + sx:Nx - sx), vy_t(1 + sy:Ny - sy), vtime, u(0 + sx:Nx - sx, 1 + sy:Ny - sy, :), TRIM(data_name)//'/u.nc', 'u')
+         CALL WRITE_NC(vx_t(1 + sx:Nx - sx), vy_v(0 + sy:Ny - sy), vtime, v(1 + sx:Nx - sx, 0 + sy:Ny - sy, :), TRIM(data_name)//'/v.nc', 'v')
       END IF
 
    ELSE
 
-      CALL WRITE_NC(vx_t(1:Nx), vy_t(1:Ny), vtime, h(1:Nx, 1:Ny, :), 'data/h.nc', 'h')
+      CALL WRITE_NC(vx_t(1:Nx), vy_t(1:Ny), vtime, h(1:Nx, 1:Ny, :), TRIM(data_name)//'/h.nc', 'h')
 
       IF (l_write_uv) THEN
-         CALL WRITE_NC(vx_u(0:Nx), vy_t(1:Ny), vtime, u(0:Nx, 1:Ny, :), 'data/u.nc', 'u')
-         CALL WRITE_NC(vx_t(1:Nx), vy_v(0:Ny), vtime, v(1:Nx, 0:Ny, :), 'data/v.nc', 'v')
+         CALL WRITE_NC(vx_u(0:Nx), vy_t(1:Ny), vtime, u(0:Nx, 1:Ny, :), TRIM(data_name)//'/u.nc', 'u')
+         CALL WRITE_NC(vx_t(1:Nx), vy_v(0:Ny), vtime, v(1:Nx, 0:Ny, :), TRIM(data_name)//'/v.nc', 'v')
       END IF
 
    END IF
@@ -809,8 +847,8 @@ CONTAINS
 
       IF (l_alpha) THEN
          ! Write alpha_u and alpha_v
-         CALL WRITE_NC_2D(vx_u(0:Nx), vy_t(1:Ny), REAL(alpha_u(0:Nx, 1:Ny), 4), 'data/alpha_u.nc', 'alpha_u')
-         CALL WRITE_NC_2D(vx_t(1:Nx), vy_v(0:Ny), REAL(alpha_v(1:Nx, 0:Ny), 4), 'data/alpha_v.nc', 'alpha_v')
+         CALL WRITE_NC_2D(vx_u(0:Nx), vy_t(1:Ny), REAL(alpha_u(0:Nx, 1:Ny), 4), TRIM(data_name)//'/alpha_u.nc', 'alpha_u')
+         CALL WRITE_NC_2D(vx_t(1:Nx), vy_v(0:Ny), REAL(alpha_v(1:Nx, 0:Ny), 4), TRIM(data_name)//'/alpha_v.nc', 'alpha_v')
       END IF
 
    END SUBROUTINE SPONGE_BC
@@ -903,17 +941,17 @@ CONTAINS
 
          CALL WRITE_NC( &
             vx_t(1 + sx:Nx - sx), vy_t(1 + sy:Ny - sy), vtime, ekij(1 + sx:Nx - sx, 1 + sy:Ny - sy, :), &
-            'data/Ek.nc', 'ek')
+            TRIM(data_name)//'/Ek.nc', 'ek')
          CALL WRITE_NC( &
             vx_t(1 + sx:Nx - sx), vy_t(1 + sy:Ny - sy), vtime, epij(1 + sx:Nx - sx, 1 + sy:Ny - sy, :), &
-            'data/Ep.nc', 'ep')
+            TRIM(data_name)//'/Ep.nc', 'ep')
          CALL WRITE_NC( &
             vx_t(1 + sx:Nx - sx), vy_t(1 + sy:Ny - sy), vtime, etij(1 + sx:Nx - sx, 1 + sy:Ny - sy, :), &
-            'data/Et.nc', 'et')
+            TRIM(data_name)//'/Et.nc', 'et')
 
       END IF
 
-      OPEN (11, file='data/Energy.dat', status='replace')
+      OPEN (11, file=TRIM(data_name)//'/Energy.dat', status='replace')
       DO jt = 1, nb_save
          WRITE (11, *) jt, ep(jt), ek(jt), et(jt)
       END DO
