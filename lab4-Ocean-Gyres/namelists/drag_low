@@ -6,21 +6,25 @@ Ny = 200                 ! Number of y T points
 Lx = 7.E6                ! Width of domain in x [m]  1.e6 = 1000 km
 Ly = 7.E6                ! Width of domain in y [m]  1.e6 = 1000 km
 !!
-Tm_d = 14.                       ! Length of the run in days
-rfsave = 2.                       ! Timestep at which to save fields in hours.
-data_name = 'data/no_drag_low_u10'          ! Name of folder to save
+Tm_d = 100.                       ! Length of the run in days
+rfsave = 24.                      ! Timestep at which to save fields in hours.
+data_name = 'data/drag_low'          ! Name of folder to save
 /
 
 &nphysics
 !!
 D = 3000.              ! Average depth [m]
-g = 9.81             ! gravity parameter
+g = 9.81               ! gravity parameter
 !!
 l_bottom_friction = .FALSE. ! Do we want bottom friction?
 nu = 0.0                    ! Value of friction parameter
 !!
 l_wind = .TRUE.           ! Do we want wind forcing?
-u10 = 0.5                 ! Wind at 10 meters
+u10 = 5.                  ! Wind at 10 meters
+!!
+l_munk_v = .TRUE.       ! Do we want laplace friction in v
+l_munk_u = .TRUE.       ! Do we want laplace friction in u also
+A = 100.E3               ! Friction as A*laplace(u)
 !!
 l_topography = .FALSE.  ! Do we want sloping bottom, energy stops working if TRUE
 depth_diff = 0.         ! Depth is set as D(y)=D-(y-0.5*Ly)*alpha, where alpha = (2*D/L)*depth_diff

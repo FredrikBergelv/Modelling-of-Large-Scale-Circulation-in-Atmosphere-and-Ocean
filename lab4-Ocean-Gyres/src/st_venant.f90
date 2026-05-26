@@ -54,6 +54,7 @@ PROGRAM ST_VENANT
       & D = 4000.,        &        ! average depth [m]
       & depth_diff = 0.1, &        ! Depth is set as D(y)=D-(y-0.5*Ly)*alpha, where alpha = (2*D/L)*depth_diff
       & u10 = 10.,         &       ! Value of wind forcing tau=rho*Cd*U^2
+      & A = 1.,         &          ! Munk friction as A*laplace(u)
       & nu = 1.0,         &        ! Value of friction parameter
       & f0 = 1.e-4,       &        ! Coriolis constant [s^-1] (only used if l_coriolis is set to true)
       & beta = 2.31e-11,  &        ! Beta plane approx
@@ -77,6 +78,8 @@ PROGRAM ST_VENANT
    LOGICAL :: l_coriolis = .TRUE.         ! should we include coriolis?
    LOGICAL :: l_topography = .TRUE.       ! Do we want sloping bottom
    LOGICAL :: l_mean = .TRUE.             ! Should we include a mean flow?
+   LOGICAL :: l_munk_v = .TRUE.             ! Do we want munk friction?
+   LOGICAL :: l_munk_u = .TRUE.           ! Do we want munk friction in u?
    LOGICAL :: l_wind = .TRUE.             ! Do we want wind forcing?
    LOGICAL :: l_bottom_friction =  .TRUE. ! Do we want bottom friction?
    LOGICAL :: l_betaplane = .TRUE.        ! should we include beta factor?
@@ -115,6 +118,8 @@ PROGRAM ST_VENANT
    !! Indices for loops
    INTEGER :: nt, nt_save, jt_save = 1, ji, jj, jf, jt, jc, nb_save, sx, sy
    REAL    :: du, dv, dh
+   REAL    :: vm_ip, vm_im, vm_jp, vm_jm, um_ip, um_im, um_jp, um_jm !For munk loop
+
 
    !! Defining namelist sections:
    NAMELIST /ngrid/ &
@@ -122,7 +127,7 @@ PROGRAM ST_VENANT
    NAMELIST /nphysics/ &
    & l_coriolis, f0, l_betaplane, beta, D, g, &
    & l_topography, depth_diff, l_mean, u0,&
-   & l_wind, u10, l_bottom_friction, nu, &
+   & l_wind, u10, l_munk_v, l_munk_u, A, l_bottom_friction, nu, &
    & l_energy, l_energyij
    NAMELIST /ninitial/ &
    & h0, l_gaussian, l_gaussian_south, Lw, l_geostrophy, l_stepfunction, l_stepfunction_NS
@@ -688,11 +693,59 @@ IF (l_gaussian) THEN
       ! Adding wind stress
       ! ================
       IF (l_wind) THEN
-
          do jj=1, Ny
             Xdu(:, jj) = Xdu(:, jj) + (tau_w / (rho*D)) * SIN(vy_t(jj) * PI / Ly)
          end do
       END IF
+
+      ! Adding Munk friction
+      ! ================
+      IF (l_munk_v .or. l_munk_u) THEN
+
+   do ji = 1, Nx
+      do jj = 1, Ny
+         if (l_munk_v) then
+
+            vm_ip = 0.0
+            vm_im = 0.0
+            vm_jp = 0.0
+            vm_jm = 0.0
+
+            if (ji < Nx) vm_ip = v_tmp(ji+1, jj, -1)
+            if (ji > 1 ) vm_im = v_tmp(ji-1, jj, -1)
+
+            if (jj < Ny) vm_jp = v_tmp(ji, jj+1, -1)
+            if (jj > 1 ) vm_jm = v_tmp(ji, jj-1, -1)
+
+            Xdv(ji, jj) = Xdv(ji, jj) &
+               + A * (vm_ip - 2.0*v_tmp(ji,jj,-1) + vm_im) / (dx**2) &
+               + A * (vm_jp - 2.0*v_tmp(ji,jj,-1) + vm_jm) / (dy**2)
+
+         end if
+
+         if (l_munk_u) then
+
+            um_ip = 0.0
+            um_im = 0.0
+            um_jp = 0.0
+            um_jm = 0.0
+
+            if (ji < Nx) um_ip = u_tmp(ji+1, jj, -1)
+            if (ji > 1 ) um_im = u_tmp(ji-1, jj, -1)
+
+            if (jj < Ny) um_jp = u_tmp(ji, jj+1, -1)
+            if (jj > 1 ) um_jm = u_tmp(ji, jj-1, -1)
+
+            Xdu(ji, jj) = Xdu(ji, jj) &
+               + A * (um_ip - 2.0*u_tmp(ji,jj,-1) + um_im) / (dx**2) &
+               + A * (um_jp - 2.0*u_tmp(ji,jj,-1) + um_jm) / (dy**2)
+
+         end if
+
+      end do
+   end do
+
+END IF
 
       ! Time step
       ! =========

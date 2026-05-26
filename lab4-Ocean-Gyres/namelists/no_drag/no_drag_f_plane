@@ -1,0 +1,81 @@
+&ngrid
+!!
+Nx = 200                 ! Number of x T points
+Ny = 200                 ! Number of y T points
+!!
+Lx = 7.E6                ! Width of domain in x [m]  1.e6 = 1000 km
+Ly = 7.E6                ! Width of domain in y [m]  1.e6 = 1000 km
+!!
+Tm_d = 14.                       ! Length of the run in days
+rfsave = 2.                       ! Timestep at which to save fields in hours.
+data_name = 'data/no_drag_f_plane'          ! Name of folder to save
+/
+
+&nphysics
+!!
+D = 3000.              ! Average depth [m]
+g = 9.81             ! gravity parameter
+!!
+l_bottom_friction = .FALSE. ! Do we want bottom friction?
+nu = 0.0                    ! Value of friction parameter
+!!
+l_wind = .TRUE.           ! Do we want wind forcing?
+u10 = 5.                 ! Wind at 10 meters
+!!
+l_munk_v = .FALSE.         ! Do we want laplace friction in v
+l_munk_u = .FALSE.         ! Do we want laplace friction in u also
+A = 1.0                 ! Friction as A*laplace(u)
+!!
+l_topography = .FALSE.  ! Do we want sloping bottom, energy stops working if TRUE
+depth_diff = 0.         ! Depth is set as D(y)=D-(y-0.5*Ly)*alpha, where alpha = (2*D/L)*depth_diff
+l_mean = .FALSE.        ! Do we want mean flow?
+u0 = 0.5                  ! Mean flow [m s^-1]
+!!
+l_coriolis = .TRUE.     ! Introduce rotation
+f0 = 7.27E-5            ! Coriolis constant
+l_betaplane = .FALSE.    ! Do we want to also use beta-plane? 
+beta = 1.98E-11         ! beta pane value f = f0 + beta*y
+!!
+l_energy = .FALSE.      ! Do we want to to compute energy?
+l_energyij = .FALSE.    ! Do we want to to compute energy   at every time step?
+/
+
+&ninitial
+!!
+h0 = 0.                      ! Amplitude of the perturbation
+!!
+l_gaussian = .FALSE.         ! Initial condition set as gaussian
+l_gaussian_south = .FALSE.   ! move gaussian to south border
+Lw = 0.25                    ! Width of the gaussian L = Lw*width
+!!
+l_geostrophy = .FALSE.       ! Should we initialize u,v in geostrophy
+!!
+l_stepfunction = .FALSE.     ! Initial condition set as step function in East - West
+l_stepfunction_NS = .FALSE.  ! Initial condition set as step function in Noth - South
+/
+
+&nnumerics
+!!
+rcfl = 0.25             ! CFL criterion
+!!
+!! Filtering for Leapfrog scheme:
+gamma = 0.075           ! Asselin coefficient
+/
+
+&nboundaries
+!!
+l_solidbc = .TRUE.      ! Impose solid boundaries
+l_coast = .FALSE.       ! Apply a coast
+!!
+l_periodic = .FALSE.     ! Impose periodic boundaries
+l_up = .FALSE.           ! Periodic in E-W
+l_vp = .FALSE.          ! Periodic in N-S
+!!
+l_spongebc = .FALSE.    ! Introduce open conditions
+S  = 50                 ! Number of grid points in the sponge 
+btype = 1               ! 0 open BC everywhere, 1 open BC N-S, 2 open BC E-W
+!!
+l_write_uv = .TRUE.     ! Should we output U and V? (H is always written)
+l_write_domain = .TRUE. ! If FALSE the netcdf will include the sponge
+l_alpha = .FALSE.       ! Save the sponge
+/

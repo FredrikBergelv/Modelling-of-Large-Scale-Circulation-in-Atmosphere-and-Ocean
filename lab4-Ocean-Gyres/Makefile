@@ -40,3 +40,6 @@ clean:
 run_all:
 	bash run_all.sh
 
+do_all:
+	bash do_all.sh
+
