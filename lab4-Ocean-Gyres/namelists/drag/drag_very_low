@@ -23,7 +23,7 @@ l_wind = .TRUE.           ! Do we want wind forcing?
 u10 = 5.                  ! Wind at 10 meters
 !!
 l_munk_v = .TRUE.       ! Do we want laplace friction in v
-l_munk_u = .TRUE.       ! Do we want laplace friction in u also
+l_munk_u = .FALSE.       ! Do we want laplace friction in u also
 A = 10.E3               ! Friction as A*laplace(u)
 !!
 l_topography = .FALSE.  ! Do we want sloping bottom, energy stops working if TRUE

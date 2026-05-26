@@ -7,7 +7,7 @@ Lx = 14.E6               ! Width of domain in x [m]  1.e6 = 1000 km
 Ly = 7.E6                ! Width of domain in y [m]  1.e6 = 1000 km
 !!
 Tm_d = 14.                       ! Length of the run in days
-rfsave = 2.                      ! Timestep at which to save fields in hours.
+rfsave = 24.                      ! Timestep at which to save fields in hours.
 data_name = 'data/no_drag_beta_plane_large_domain'          ! Name of folder to save
 /
 

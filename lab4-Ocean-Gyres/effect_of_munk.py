@@ -18,26 +18,41 @@ beta = 1.98e-11
 # =========================
 # THEORY
 # =========================
-def sverdrup(x, y, u10, Lx):
-    dx_here = Lx / Nx
-    tau_w = 1.225 * 1.5 * 0.001 * (u10 ** 2)
+def sverdrup(x, y, u10, Lx=Lx):
 
-    wE = (1 / rho) * (1 / f0) * (-np.pi / Ly) * (tau_w / (rho * D)) * np.cos(y * np.pi / Ly)
+    dx_here = Lx / Nx
+
+    # wind stress amplitude
+    tau0 = 1.225 * 1.5 * 0.001 * (u10**2)
+
+    # curl(tau)
+    curl_tau = (
+        -np.pi / Ly
+        * tau0
+        * np.cos(np.pi * y / Ly)
+    )
+
+    # Sverdrup meridional transport
+    v_s = curl_tau / (rho * beta)
 
     psi = np.zeros((len(y), len(x)))
 
     for j in range(len(y)):
-        integral = 0.0
-        for i in reversed(range(len(x))):
-            if i < len(x) - 1:
-                integral += wE[j] * dx_here
-            psi[j, i] = -f0 / beta * integral
 
-    return psi
+        integral = 0.0
+
+        for i in reversed(range(len(x))):
+
+            if i < len(x) - 1:
+                integral += v_s[j] * dx_here
+
+            psi[j, i] = integral
+
+    return -psi 
 
 
 def munk(x, y, A, Lx):
-    psi_s = sverdrup(x, y, u10=5, Lx=Lx)
+    psi_s = sverdrup(x, y, u10=10, Lx=Lx)
 
     dm = (A / beta) ** (1 / 3)
 
@@ -136,8 +151,8 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
                 psi,
                 levels=20,
                 cmap="cmo.haline",
-                vmin=vmin,
-                vmax=vmax
+                vmin=0,
+                vmax=8
             )
 
             # -------- THEORY --------
@@ -202,6 +217,6 @@ plot_2xN(
         "Munk drag ON",
         "Munk drag OFF"
     ],
-    u10=5,
-    show=True
+    u10=10,
+    show=False
 )

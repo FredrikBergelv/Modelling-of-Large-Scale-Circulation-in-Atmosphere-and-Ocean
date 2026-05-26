@@ -16,22 +16,37 @@ beta = 1.98e-11
 # THEORETICAL MODELS
 # =========================
 
-def sverdrup(x, y, u10, Lx, Nx=Nx):
-    dx_here = Lx / Nx
-    tau_w = 1.225 * 1.5 * 0.001 * (u10 ** 2)
+def sverdrup(x, y, u10, Lx=Lx, Nx=Nx):
 
-    wE = (1 / rho) * (1 / f0) * (-np.pi / Ly) * (tau_w / (rho * D)) * np.cos(y * np.pi / Ly)
+    dx_here = Lx / Nx
+
+    # wind stress amplitude
+    tau0 = 1.225 * 1.5 * 0.001 * (u10**2)
+
+    # curl(tau)
+    curl_tau = (
+        -np.pi / Ly
+        * tau0
+        * np.cos(np.pi * y / Ly)
+    )
+
+    # Sverdrup meridional transport
+    v_s = curl_tau / (rho * beta)
 
     psi = np.zeros((len(y), len(x)))
 
     for j in range(len(y)):
-        integral = 0.0
-        for i in reversed(range(len(x))):
-            if i < len(x) - 1:
-                integral += wE[j] * dx_here
-            psi[j, i] = -f0 / beta * integral
 
-    return psi
+        integral = 0.0
+
+        for i in reversed(range(len(x))):
+
+            if i < len(x) - 1:
+                integral += v_s[j] * dx_here
+
+            psi[j, i] = integral
+
+    return -psi 
 
 
 def munk(x, y, A, Lx, Nx=Nx):
@@ -144,8 +159,7 @@ def plot_streamfunction_compare(folders, times, labels=None, u10=False, A=False,
     plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
     plt.savefig(f"ocean-gyres-report/Figures/{save_name}.png", dpi=300, bbox_inches="tight")
     print(f"Saved as {save_name}")
-    if show:
-        plt.show()
+
 
 
 # =========================
@@ -153,11 +167,11 @@ def plot_streamfunction_compare(folders, times, labels=None, u10=False, A=False,
 # =========================
 
 plot_streamfunction_compare(
-    folders=["no_drag_normal_u10",
+    folders=["no_drag_intermediate_u10",
             "no_drag_beta_plane_large_domain"],
     times=[2 * 24],
     labels=["North Atlantic", "North Pacific"],
     u10=True,
     Lx=14e6, Nx=400,
-    show=True
+    show=False
 )

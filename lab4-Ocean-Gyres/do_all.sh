@@ -46,7 +46,9 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate vattensnok
 
 # run plotting script
-python *.py
+for file in *.py; do
+    python "$file"
+done
 
 
 echo " "

@@ -18,17 +18,20 @@ beta = 1.98e-11
 
 def sverdrup(x, y, u10):
 
-    dx_here = Ly / Nx
+    dx_here = Lx / Nx
 
-    tau_w = 1.225 * 1.5 * 0.001 * (u10**2)
+    # wind stress amplitude
+    tau0 = 1.225 * 1.5 * 0.001 * (u10**2)
 
-    wE = (
-        (1 / rho)
-        * (1 / f0)
-        * (-np.pi / Ly)
-        * (tau_w / (rho * D))
-        * np.cos(y * np.pi / Ly)
+    # curl(tau)
+    curl_tau = (
+        -np.pi / Ly
+        * tau0
+        * np.cos(np.pi * y / Ly)
     )
+
+    # Sverdrup meridional transport
+    v_s = curl_tau / (rho * beta)
 
     psi = np.zeros((len(y), len(x)))
 
@@ -39,14 +42,14 @@ def sverdrup(x, y, u10):
         for i in reversed(range(len(x))):
 
             if i < len(x) - 1:
-                integral += wE[j] * dx_here
+                integral += v_s[j] * dx_here
 
-            psi[j, i] = -f0 / beta * integral
+            psi[j, i] = integral
 
-    return psi
+    return -psi 
 
 
-def munk(x, y, A, u10=5):
+def munk(x, y, A, u10=10):
 
     psi_s = sverdrup(x, y, u10=u10)
 
@@ -267,7 +270,7 @@ def plot_case_row(
 plot_case_row(
     folders=[
         "no_drag_low_u10",
-        "no_drag_normal_u10",
+        "no_drag_intermediate_u10",
         "no_drag_high_u10"],
 
     values=[4, 5, 6],
@@ -285,11 +288,11 @@ plot_case_row(
 plot_case_row(
     folders=[
         "drag_low",
-        "drag_normal",
+        "drag_intermediate",
         "drag_high"
     ],
 
-    values=[100e3, 200e3, 400e3],
+    values=[10e3, 100e3, 500e3],
     label="A",
     save_name="munk_comparison",
     A=True,

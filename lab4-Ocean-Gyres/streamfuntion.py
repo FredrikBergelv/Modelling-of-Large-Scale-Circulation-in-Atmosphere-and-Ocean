@@ -11,24 +11,37 @@ rho = 1027
 f0 = 7.27e-5           
 beta = 1.98e-11
 
-def sverdrup(x, y, u10, Lx):
-    dx_here = Lx/Nx
-    tau_w = 1.225 * 1.5 * 0.001 * (u10**2)
-    # wind stress 
-    #tau_y = (tau_w / (rho * D)) * np.sin(y * np.pi / Ly)
-    wE = (1/rho) * (1/f0) * (-np.pi / Ly)  *(tau_w / (rho * D)) * np.cos(y * np.pi / Ly)
+def sverdrup(x, y, u10, Lx=Lx):
+
+    dx_here = Lx / Nx
+
+    # wind stress amplitude
+    tau0 = 1.225 * 1.5 * 0.001 * (u10**2)
+
+    # curl(tau)
+    curl_tau = (
+        -np.pi / Ly
+        * tau0
+        * np.cos(np.pi * y / Ly)
+    )
+
+    # Sverdrup meridional transport
+    v_s = curl_tau / (rho * beta)
+
     psi = np.zeros((len(y), len(x)))
-    
-    # integrate in x for each y
+
     for j in range(len(y)):
+
         integral = 0.0
+
         for i in reversed(range(len(x))):
+
             if i < len(x) - 1:
-                integral += wE[j] * dx_here  # constant in x for fixed y
+                integral += v_s[j] * dx_here
 
-            psi[j, i] = -f0 / beta * integral
+            psi[j, i] = integral
 
-    return psi
+    return -psi 
 
 
 def munk(x, y, A, Lx):
@@ -53,7 +66,6 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
     if not isinstance(times, list):
         times = [times]
 
-    print("\n", folder)
     h_ds = xr.open_dataset(f"data/{folder}/h.nc")
     u_ds = xr.open_dataset(f"data/{folder}/u.nc")
     v_ds = xr.open_dataset(f"data/{folder}/v.nc")
@@ -76,8 +88,6 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
 
         actual_time = h["time"].values
         actual_times.append(actual_time)
-
-        print("Actual time:", actual_time)
 
         # --- STREAMFUNCTION ---
         psi = -np.cumsum((v.values * D * dx)[:, ::-1], axis=1)[:, ::-1]
@@ -155,7 +165,7 @@ plot_streamfunction("no_drag_f_plane", times_end)
 """
 plot_streamfunction("no_drag_f_plane", times_end)
 
-plot_streamfunction("no_drag_normal_u10", 2*24, u10=5)
+plot_streamfunction("no_drag_intermediate_u10", 2*24, u10=5)
 
 plot_streamfunction("no_drag_low_u10", 2*24, u10=4)
 
@@ -163,13 +173,11 @@ plot_streamfunction("no_drag_high_u10", 2*24, u10=6)
 
 
 
-plot_streamfunction("drag_normal", times_end, A=200e3)
+plot_streamfunction("drag_intermediate", times_end, A=100e3)
 
-plot_streamfunction("drag_high", times_end, A=400e3)
+plot_streamfunction("drag_high", times_end, A=500e3)
 
-plot_streamfunction("drag_low", times_end, A=100e3)
-
-plot_streamfunction("drag_very_low", times_end, A=10e3)
+plot_streamfunction("drag_low", times_end, A=10e3)
 
 plot_streamfunction("no_drag_beta_plane_large_domain", [2*24], u10=5, Lx=14e6)
 
