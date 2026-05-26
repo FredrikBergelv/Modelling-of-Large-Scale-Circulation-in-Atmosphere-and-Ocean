@@ -3,181 +3,240 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import cmocean
 
+# ==========================================================
+# PARAMETERS
+# ==========================================================
 D = 3000
 Lx = Ly = 7e6
 Nx = Ny = 200
 dx = dy = Lx / Nx
 rho = 1027
-f0 = 7.27e-5           
+f0 = 7.27e-5
 beta = 1.98e-11
 
-def sverdrup(x, y, u10, Lx):
-    dx_here = Lx/Nx
+
+# ==========================================================
+# THEORETICAL SOLUTIONS
+# ==========================================================
+def sverdrup(x, y, u10):
+
+    dx_here = Lx / Nx
+
     tau_w = 1.225 * 1.5 * 0.001 * (u10**2)
-    # wind stress 
-    #tau_y = (tau_w / (rho * D)) * np.sin(y * np.pi / Ly)
-    wE = (1/rho) * (1/f0) * (-np.pi / Ly)  *(tau_w / (rho * D)) * np.cos(y * np.pi / Ly)
-    print(Lx,Ly)
+
+    wE = (
+        (1 / rho)
+        * (1 / f0)
+        * (-np.pi / Ly)
+        * (tau_w / (rho * D))
+        * np.cos(y * np.pi / Ly)
+    )
+
     psi = np.zeros((len(y), len(x)))
-    
-    # integrate in x for each y
+
     for j in range(len(y)):
         integral = 0.0
         for i in reversed(range(len(x))):
             if i < len(x) - 1:
-                integral += wE[j] * dx_here  # constant in x for fixed y
-
+                integral += wE[j] * dx_here
             psi[j, i] = -f0 / beta * integral
 
     return psi
 
 
-def munk(x, y, A, Lx):
-
-    psi_s = sverdrup(x, y, u10=5, Lx=Lx)  
+def munk(x, y, A, u10=5):
+    psi_s = sverdrup(x, y, u10=u10)
 
     dm = (A / beta) ** (1 / 3)
 
-    factor_x = (1 - np.exp(-x / (2 * dm)) * (
-        np.cos(x * np.sqrt(3) / (2 * dm))
-        + (1 / np.sqrt(3)) * np.sin(x * np.sqrt(3) / (2 * dm))
-        ))
+    factor_x = (
+        1
+        - np.exp(-x / (2 * dm))
+        * (
+            np.cos(x * np.sqrt(3) / (2 * dm))
+            + (1 / np.sqrt(3)) * np.sin(x * np.sqrt(3) / (2 * dm))
+        )
+    )
 
-    psi = psi_s * factor_x[None, :]  # broadcast in y
-
-    return psi
+    return psi_s * factor_x[None, :]
 
 
-def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
+# ==========================================================
+# MODEL STREAMFUNCTION
+# ==========================================================
+def compute_streamfunction(folder, time):
 
-    # make sure times is always a list
-    if not isinstance(times, list):
-        times = [times]
-
-    print("\n", folder)
     h_ds = xr.open_dataset(f"data/{folder}/h.nc")
-    u_ds = xr.open_dataset(f"data/{folder}/u.nc")
     v_ds = xr.open_dataset(f"data/{folder}/v.nc")
 
-    # --- coordinates ---
+    h = h_ds["h"].sel(time=time, method="nearest")
+    v = v_ds["v"].sel(time=time, method="nearest")
+
     x = h_ds["x"].values
     y = h_ds["y"].values
 
-    # store all psi fields
-    psi_list = []
-    actual_times = []
+    psi = -np.cumsum((v.values * D * dx)[:, ::-1], axis=1)[:, ::-1]
 
-    # --- compute all streamfunctions first ---
-    for time in times:
+    return x, y, psi / 1e6
 
-        # correct time selection
-        h = h_ds["h"].sel(time=time, method="nearest")
-        u = u_ds["u"].sel(time=time, method="nearest")
-        v = v_ds["v"].sel(time=time, method="nearest")
 
-        actual_time = h["time"].values
-        actual_times.append(actual_time)
+# ==========================================================
+# CROSS SECTION EXTRACTOR (y = 0)
+# ==========================================================
+def extract_centerline(x, y, psi):
 
-        print("Actual time:", actual_time)
+    # find index closest to y=0
+    j0 = np.argmin(np.abs(y - 0))
 
-        # --- STREAMFUNCTION ---
-        psi = -np.cumsum((v.values * D * dx)[:, ::-1], axis=1)[:, ::-1]
+    return psi[j0, :]
 
-        # --- ALIGN GRID ---
-        if psi.shape[0] != len(y):
-            y_plot = np.linspace(y[0], y[-1], psi.shape[0])
-        else:
-            y_plot = y
 
-        psi_list.append((psi / (10**6), y_plot))
-        
-        print(x.min()/1000, x.max()/1000)
-        print(y.min()/1000, y.max()/1000)
+def extract_theory_centerline(x, y, psi_theo):
 
-    # --- common color scale ---
-    all_psi = np.concatenate([p[0].ravel() for p in psi_list])
+    j0 = np.argmin(np.abs(y - 0))
 
-    vmin = np.min(all_psi)
-    vmax = np.max(all_psi)
+    return psi_theo[j0, :]
 
-    # --- figure and subplots ---
-    fig, axes = plt.subplots(1, len(times), figsize=(4 * len(times), 4), squeeze=False, sharey=True, sharex=True)
 
-    axes = axes[0]
+# ==========================================================
+# PLOT ROW FUNCTION (CROSS SECTIONS)
+# ==========================================================
+def plot_case_row_cross(
+    folders,
+    values,
+    label,
+    save_name,
+    time=1e10,
+    u10=False,
+    A=False,
+    show=False
+):
 
-    # --- plotting ---
+    n = len(folders)
+
+    fig, axes = plt.subplots(1, n, figsize=(5*n, 4), sharey=True)
+
+    if n == 1:
+        axes = [axes]
+
+    # ------------------------------------------------------
+    # FIRST PASS (model data)
+    # ------------------------------------------------------
+    model_profiles = []
+    theory_profiles = []
+    x_global = None
+
+    for i, folder in enumerate(folders):
+
+        x, y, psi = compute_streamfunction(folder, time)
+        x_global = x
+
+        model_profiles.append(extract_centerline(x, y, psi))
+
+        # THEORY
+        if A:
+            psi_theo = munk(x, y, A=values[i])
+            theory_profiles.append(extract_theory_centerline(x, y, psi_theo))
+
+        if u10:
+            psi_theo = sverdrup(x, y, u10=values[i])
+            theory_profiles.append(extract_theory_centerline(x, y, psi_theo))
+
+    # ------------------------------------------------------
+    # PLOTTING
+    # ------------------------------------------------------
     for i, ax in enumerate(axes):
 
-        psi, y_plot = psi_list[i]
-        actual_time = actual_times[i]
+        x_km = x_global / 1000
 
-        cf = ax.contourf(x / 1000, y_plot / 1000, psi, cmap='cmo.haline', levels=20, vmin=vmin, vmax=vmax, aspect="equal")
+        # MODEL (solid)
+        ax.plot(
+            x_km,
+            model_profiles[i],
+            linewidth=2,
+            label="Model"
+        )
 
-        # Here we do theoretical solutions!
+        # THEORY (dotted)
+        if (A or u10):
+            ax.plot(
+                x_km,
+                theory_profiles[i],
+                linestyle="dotted",
+                linewidth=2,
+                color="black",
+                label="Theory"
+            )
+
+        # LABELS
+        ax.set_title(folders[i].replace("_", " ").title())
+
+        ax.set_xlabel("x [km]")
+        ax.grid(alpha=0.3)
+
+        # parameter text
         if A:
-            psi_theo = munk(x,y_plot,A,Lx)
-            ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
+            ax.text(
+                0.95, 0.95,
+                rf"$A={values[i]:.0e}$",
+                transform=ax.transAxes,
+                ha="right",
+                va="top",
+                bbox=dict(facecolor="white", alpha=0.8)
+            )
+
         if u10:
-            psi_theo = sverdrup(x,y_plot,u10,Lx)
-            ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
+            ax.text(
+                0.95, 0.95,
+                rf"$U_{{10}}={values[i]}$",
+                transform=ax.transAxes,
+                ha="right",
+                va="top",
+                bbox=dict(facecolor="white", alpha=0.8)
+            )
 
-        ax.set_xlabel("Latitude, $x$ [km]")
+    axes[0].set_ylabel(r"$\Psi$ [Sv]")
 
-        if i == 0:
-            ax.set_ylabel("Longitude, $y$ [km]")
-
-        # convert to days + hours
-        days = actual_time // 24
-        hours = actual_time % 24
-
-        ax.set_title(f"t={days:.0f}d {hours:.0f}h")
-
-    # --- single colorbar on last subplot ---
-    cbar = fig.colorbar(cf, ax=axes, location="right", shrink=0.8, pad=0.01)
-    
-    plt.suptitle(f"Streamfunction for {folder.replace("_", " ")}", size=16)
-
-    cbar.set_label(r"Streamfunction, $\Psi$ [Sv]")
-
+    plt.suptitle("Gyre Streamfunction Cross-Section (y = 0)", size=14)
     fig.set_constrained_layout(True)
-    save_name = folder + "_streamfunction"
 
     plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
     plt.savefig(f"ocean-gyres-report/Figures/{save_name}.png", dpi=300, bbox_inches="tight")
+
     print(f"Saved as {save_name}")
+
     if show:
         plt.show()
 
 
-times_long = [2*24, 7*24, 40*24]
-times_short = [2*24, 7*24, 14*24]
-times_end = 1e10
-times_early = 24
+# ==========================================================
+# RUN CASES
+# ==========================================================
 
+# WIND SPEED COMPARISON
+plot_case_row_cross(
+    folders=[
+        "no_drag_low_u10",
+        "no_drag_normal_u10",
+        "no_drag_high_u10"
+    ],
+    values=[4, 5, 6],
+    label=r"$U_{10}$",
+    save_name="u10_cross_section",
+    u10=True,
+    time=2 * 24
+)
 
-"""
-plot_streamfunction("no_drag_f_plane", times_end)
-
-plot_streamfunction("no_drag_normal_u10", 2*24, u10=5)
-
-plot_streamfunction("no_drag_low_u10", 2*24, u10=4)
-
-plot_streamfunction("no_drag_high_u10", 2*24, u10=6)
-
-
-
-plot_streamfunction("drag_normal", times_end, A=200e3)
-
-plot_streamfunction("drag_high", times_end, A=400e3)
-
-plot_streamfunction("drag_low", times_end, A=100e3)
-
-plot_streamfunction("drag_very_low", times_end, A=10e3)
-"""
-
-
-plot_streamfunction("no_drag_beta_plane_large_domain", [24,24+12,2*24], u10=5, Lx=14e6, show=True)
-
-
-
-
+# MUNK COMPARISON
+plot_case_row_cross(
+    folders=[
+        "drag_low",
+        "drag_normal",
+        "drag_high"
+    ],
+    values=[100e3, 200e3, 400e3],
+    label="A",
+    save_name="munk_cross_section",
+    A=True,
+    time=1e10
+)

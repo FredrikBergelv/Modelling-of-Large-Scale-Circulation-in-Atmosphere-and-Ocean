@@ -150,6 +150,7 @@ times_short = [2*24, 7*24, 14*24]
 times_end = 1e10
 times_early = 24
 
+plot_streamfunction("no_drag_f_plane", times_end)
 
 """
 plot_streamfunction("no_drag_f_plane", times_end)
@@ -169,11 +170,9 @@ plot_streamfunction("drag_high", times_end, A=400e3)
 plot_streamfunction("drag_low", times_end, A=100e3)
 
 plot_streamfunction("drag_very_low", times_end, A=10e3)
-"""
-
 
 plot_streamfunction("no_drag_beta_plane_large_domain", [2*24], u10=5, Lx=14e6)
 
 
-
+"""
 

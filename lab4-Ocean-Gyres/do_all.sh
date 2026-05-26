@@ -46,8 +46,8 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate vattensnok
 
 # run plotting script
-python streamfuntion.py
-python streamfuntion_multiplot.py
+python *.py
+
 
 echo " "
 echo "=============== STREAMFUNCTION PLOTS COMPLETED ==============="
