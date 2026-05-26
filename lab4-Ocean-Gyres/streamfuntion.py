@@ -11,16 +11,14 @@ rho = 1027
 f0 = 7.27e-5           
 beta = 1.98e-11
 
-def sverdrup(x, y, u10, Nx):
-    dx_here = Ly/Nx
-
+def sverdrup(x, y, u10, Lx):
+    dx_here = Lx/Nx
     tau_w = 1.225 * 1.5 * 0.001 * (u10**2)
     # wind stress 
     #tau_y = (tau_w / (rho * D)) * np.sin(y * np.pi / Ly)
     wE = (1/rho) * (1/f0) * (-np.pi / Ly)  *(tau_w / (rho * D)) * np.cos(y * np.pi / Ly)
-      
     psi = np.zeros((len(y), len(x)))
-
+    
     # integrate in x for each y
     for j in range(len(y)):
         integral = 0.0
@@ -33,9 +31,9 @@ def sverdrup(x, y, u10, Nx):
     return psi
 
 
-def munk(x, y, A, Nx):
+def munk(x, y, A, Lx):
 
-    psi_s = sverdrup(x, y, u10=5, Nx=Nx)  
+    psi_s = sverdrup(x, y, u10=5, Lx=Lx)  
 
     dm = (A / beta) ** (1 / 3)
 
@@ -49,7 +47,7 @@ def munk(x, y, A, Nx):
     return psi
 
 
-def plot_streamfunction(folder, times, show=False, u10=False, A=False, Nx=Nx):
+def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
 
     # make sure times is always a list
     if not isinstance(times, list):
@@ -99,7 +97,7 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Nx=Nx):
     vmax = np.max(all_psi)
 
     # --- figure and subplots ---
-    fig, axes = plt.subplots(1, len(times), figsize=(5 * len(times), 5), squeeze=False, sharey=True, sharex=True)
+    fig, axes = plt.subplots(1, len(times), figsize=(4 * len(times), 4), squeeze=False, sharey=True, sharex=True)
 
     axes = axes[0]
 
@@ -109,15 +107,15 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Nx=Nx):
         psi, y_plot = psi_list[i]
         actual_time = actual_times[i]
 
-        cf = ax.contourf(x / 1000, y_plot / 1000, psi, cmap='cmo.haline', levels=30, vmin=vmin, vmax=vmax)
+        cf = ax.contourf(x / 1000, y_plot / 1000, psi, cmap='cmo.haline', levels=20, vmin=vmin, vmax=vmax)
 
         # Here we do theoretical solutions!
         if A:
-            psi_theo = munk(x,y_plot,A,Nx)
-            ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=0.5)
+            psi_theo = munk(x,y_plot,A,Lx)
+            ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
         if u10:
-            psi_theo = sverdrup(x,y_plot,u10,Nx)
-            ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=0.5)
+            psi_theo = sverdrup(x,y_plot,u10,Lx)
+            ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
 
         ax.set_xlabel("Latitude, $x$ [km]")
 
@@ -149,31 +147,32 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Nx=Nx):
 
 times_long = [2*24, 7*24, 40*24]
 times_short = [2*24, 7*24, 14*24]
-times_end = [1e10]
-times_early = [24]
+times_end = 1e10
+times_early = 24
 
 
+"""
+plot_streamfunction("no_drag_f_plane", times_end)
 
-plot_streamfunction("no_drag_f_plane", times_long)
+plot_streamfunction("no_drag_normal_u10", 2*24, u10=5)
 
-plot_streamfunction("no_drag_normal_u10", times_long, u10=5)
+plot_streamfunction("no_drag_low_u10", 2*24, u10=4)
 
-plot_streamfunction("no_drag_low_u10", times_long, u10=0.5)
+plot_streamfunction("no_drag_high_u10", 2*24, u10=6)
 
-plot_streamfunction("no_drag_high_u10", times_long, u10=15)
-
-plot_streamfunction("no_drag_beta_plane_large_domain", times_long, u10=5, Nx=400)
 
 
 plot_streamfunction("drag_normal", times_end, A=200e3)
 
-plot_streamfunction("drag_high", times_end, A=300e3)
+plot_streamfunction("drag_high", times_end, A=400e3)
 
 plot_streamfunction("drag_low", times_end, A=100e3)
 
 plot_streamfunction("drag_very_low", times_end, A=10e3)
+"""
 
 
+plot_streamfunction("no_drag_beta_plane_large_domain", [2*24], u10=5, Lx=14e6)
 
 
 

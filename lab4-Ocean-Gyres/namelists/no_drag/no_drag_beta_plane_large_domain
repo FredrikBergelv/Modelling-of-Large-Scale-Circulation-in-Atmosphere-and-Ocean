@@ -1,9 +1,9 @@
 &ngrid
 !!
 Nx = 400                 ! Number of x T points
-Ny = 400                 ! Number of y T points
+Ny = 200                 ! Number of y T points
 !!
-Lx = 7.E6                ! Width of domain in x [m]  1.e6 = 1000 km
+Lx = 14.E6               ! Width of domain in x [m]  1.e6 = 1000 km
 Ly = 7.E6                ! Width of domain in y [m]  1.e6 = 1000 km
 !!
 Tm_d = 14.                       ! Length of the run in days

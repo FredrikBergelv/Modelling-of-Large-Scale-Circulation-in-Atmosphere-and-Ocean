@@ -1,286 +1,183 @@
 import numpy as np
-from load import load_data
 import matplotlib.pyplot as plt
+import xarray as xr
+import cmocean
 
-beta = 2e-11
-f = 1e-4
-g = 0.0981
-H0 = 4000
-R = np.sqrt(g*H0)/f
-kR = 1.73
-k = kR / R
+D = 3000
+Lx = Ly = 7e6
+Nx = Ny = 200
+dx = dy = Lx / Nx
+rho = 1027
+f0 = 7.27e-5           
+beta = 1.98e-11
 
-data = [("depth_diff=-20", -0.2),
-        ("depth_diff=0", 0),
-        ("depth_diff=20", 0.2),
-        ("depth_diff=40", 0.4),
-        ("depth_diff=70", 0.7),
-        ("depth_diff=90", 0.8)]
-
-phases = []
-groups = []
-phases_theo = []
-groups_theo = []
-alphas = []
-
-
-def omega_theo(alpha):
-    return - (beta-alpha*f/H0) * k / (k**2 + 1/(R**2))
-
-def phase_theo(kR, alpha):
-    k = kR/R
-    return - (beta-alpha*f/H0) / (k**2 + 1/(R**2))
-
-def group_theo(kR, alpha):
-    k = kR/R
-    return  (beta-alpha*f/H0) * (k**2 - 1/(R**2)) / ((k**2 + 1/(R**2))**2)
-
-def phase(hy, k_target=kR/R):
-
-    x = hy.x.values
-    t = 3600 * hy.time.values
-
-    phases = []
-
-    for tt in hy.time:
-
-        hslice = hy.sel(time=tt).values
-
-        # FFT
-        H = np.fft.fft(hslice)
-
-        # corresponding wavenumbers
-        kfft = 2*np.pi*np.fft.fftfreq(len(x), d=(x[1]-x[0]))
-
-        # closest spectral mode
-        idx = np.argmin(np.abs(kfft - k_target))
-
-        # phase of Fourier coefficient
-        phases.append(np.angle(H[idx]))
-
-    phases = np.unwrap(phases)
-
-    # linear fit phase(t)
-    omega_num = -np.polyfit(t, phases, 1)[0]
-
-    cp = omega_num / k_target
-
-    return cp
+def sverdrup(x, y, u10, Lx):
+    dx_here = Lx/Nx
+    tau_w = 1.225 * 1.5 * 0.001 * (u10**2)
+    # wind stress 
+    #tau_y = (tau_w / (rho * D)) * np.sin(y * np.pi / Ly)
+    wE = (1/rho) * (1/f0) * (-np.pi / Ly)  *(tau_w / (rho * D)) * np.cos(y * np.pi / Ly)
+    print(Lx,Ly)
+    psi = np.zeros((len(y), len(x)))
     
+    # integrate in x for each y
+    for j in range(len(y)):
+        integral = 0.0
+        for i in reversed(range(len(x))):
+            if i < len(x) - 1:
+                integral += wE[j] * dx_here  # constant in x for fixed y
 
-def group(hy):
+            psi[j, i] = -f0 / beta * integral
 
-    x = hy.x.values
-    t = 3600*hy.time.values
-
-    # ---- t=0: largest point ----
-    h0 = hy.isel(time=0).values
-    i_max0 = np.argmax(h0)
-    x0 = x[i_max0]
-
-    # ---- find smallest value over ALL time ----
-    hmin = hy.values.min()
-
-    # find where that minimum occurs (first occurrence)
-    idx = np.argwhere(hy.values == hmin)[0]
-    it_min = idx[0]
-    ix_min = idx[1]
-
-    x1 = x[ix_min]
-    t1 = t[it_min]
-
-    # ---- convert time ----
-    try:
-        t0 = 0
-        t1 = (t1 - t[0]) / np.timedelta64(1, "s")
-    except:
-        t0 = 0
-
-    # ---- dx/dt ----
-    dx = x1 - x0
-    dt = t1 - t0
-
-    c = dx / dt
-
-    return c
+    return psi
 
 
+def munk(x, y, A, Lx):
 
-for (data_name, ratio) in data:
+    psi_s = sverdrup(x, y, u10=5, Lx=Lx)  
 
-    # Load data (xarray)
-    h, u, v = load_data(data_name)
+    dm = (A / beta) ** (1 / 3)
 
-    # Ensure coordinates exist
-    x = h.x
-    y = h.y
-    t = h.time
+    factor_x = (1 - np.exp(-x / (2 * dm)) * (
+        np.cos(x * np.sqrt(3) / (2 * dm))
+        + (1 / np.sqrt(3)) * np.sin(x * np.sqrt(3) / (2 * dm))
+        ))
+
+    psi = psi_s * factor_x[None, :]  # broadcast in y
+
+    return psi
+
+
+def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
+
+    # make sure times is always a list
+    if not isinstance(times, list):
+        times = [times]
+
+    print("\n", folder)
+    h_ds = xr.open_dataset(f"data/{folder}/h.nc")
+    u_ds = xr.open_dataset(f"data/{folder}/u.nc")
+    v_ds = xr.open_dataset(f"data/{folder}/v.nc")
+
+    # --- coordinates ---
+    x = h_ds["x"].values
+    y = h_ds["y"].values
+
+    # store all psi fields
+    psi_list = []
+    actual_times = []
+
+    # --- compute all streamfunctions first ---
+    for time in times:
+
+        # correct time selection
+        h = h_ds["h"].sel(time=time, method="nearest")
+        u = u_ds["u"].sel(time=time, method="nearest")
+        v = v_ds["v"].sel(time=time, method="nearest")
+
+        actual_time = h["time"].values
+        actual_times.append(actual_time)
+
+        print("Actual time:", actual_time)
+
+        # --- STREAMFUNCTION ---
+        psi = -np.cumsum((v.values * D * dx)[:, ::-1], axis=1)[:, ::-1]
+
+        # --- ALIGN GRID ---
+        if psi.shape[0] != len(y):
+            y_plot = np.linspace(y[0], y[-1], psi.shape[0])
+        else:
+            y_plot = y
+
+        psi_list.append((psi / (10**6), y_plot))
+        
+        print(x.min()/1000, x.max()/1000)
+        print(y.min()/1000, y.max()/1000)
+
+    # --- common color scale ---
+    all_psi = np.concatenate([p[0].ravel() for p in psi_list])
+
+    vmin = np.min(all_psi)
+    vmax = np.max(all_psi)
+
+    # --- figure and subplots ---
+    fig, axes = plt.subplots(1, len(times), figsize=(4 * len(times), 4), squeeze=False, sharey=True, sharex=True)
+
+    axes = axes[0]
+
+    # --- plotting ---
+    for i, ax in enumerate(axes):
+
+        psi, y_plot = psi_list[i]
+        actual_time = actual_times[i]
+
+        cf = ax.contourf(x / 1000, y_plot / 1000, psi, cmap='cmo.haline', levels=20, vmin=vmin, vmax=vmax, aspect="equal")
+
+        # Here we do theoretical solutions!
+        if A:
+            psi_theo = munk(x,y_plot,A,Lx)
+            ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
+        if u10:
+            psi_theo = sverdrup(x,y_plot,u10,Lx)
+            ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
+
+        ax.set_xlabel("Latitude, $x$ [km]")
+
+        if i == 0:
+            ax.set_ylabel("Longitude, $y$ [km]")
+
+        # convert to days + hours
+        days = actual_time // 24
+        hours = actual_time % 24
+
+        ax.set_title(f"t={days:.0f}d {hours:.0f}h")
+
+    # --- single colorbar on last subplot ---
+    cbar = fig.colorbar(cf, ax=axes, location="right", shrink=0.8, pad=0.01)
     
-    alpha = ratio*2*H0/np.max(h.x)
+    plt.suptitle(f"Streamfunction for {folder.replace("_", " ")}", size=16)
 
-    # Extract mid-latitude slice 
-    hy = h.sel(y=h.y.mean(), method="nearest")
+    cbar.set_label(r"Streamfunction, $\Psi$ [Sv]")
 
-    # Obtain phase and group speeds
-    cp = phase(hy)
-    cg = group(hy)
-    
-    if ratio==0.7:
-        cp=0
-        cg=0
-    
-    phases.append(cp)
-    groups.append(cg)
-    
-    # Obtain theoretical phase and group speeds
-    cp_theo = phase_theo(kR, alpha)
-    cg_theo = group_theo(kR, alpha)
-    
-    phases_theo.append(cp_theo)
-    groups_theo.append(cg_theo)
-    
-    # Store alphas
-    alphas.append(float(alpha))
-    
+    fig.set_constrained_layout(True)
+    save_name = folder + "_streamfunction"
+
+    plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"ocean-gyres-report/Figures/{save_name}.png", dpi=300, bbox_inches="tight")
+    print(f"Saved as {save_name}")
+    if show:
+        plt.show()
 
 
-    print("\n======================")
-    print(data_name)
-    print("phase speed cp:", cp, " (error:", np.round(float(100*np.abs(cp-cp_theo)/cp_theo)), "%)")
-    print("group speed cg:", cg, " (error:", np.round(float(100*np.abs(cg-cg_theo)/cg_theo)),"%)")
+times_long = [2*24, 7*24, 40*24]
+times_short = [2*24, 7*24, 14*24]
+times_end = 1e10
+times_early = 24
 
 
-phases[0] = phases[0]*3.8
+"""
+plot_streamfunction("no_drag_f_plane", times_end)
 
-# ---- FIGURE WITH 3 SUBFIGURES ----
-fig, axes = plt.subplots(1, 3, figsize=(8/0.6, 4), sharey=True)
+plot_streamfunction("no_drag_normal_u10", 2*24, u10=5)
 
-kRs = np.linspace(0, 8, 1000)
+plot_streamfunction("no_drag_low_u10", 2*24, u10=4)
 
-# always include i=1
-base_index = 1
+plot_streamfunction("no_drag_high_u10", 2*24, u10=6)
 
-# second member of each panel
-panel_indices = [0, 3, 5]
 
-for ax, extra_i in zip(axes, panel_indices):
 
-    # plot i=1 and chosen extra case
-    for i in [base_index, extra_i]:
+plot_streamfunction("drag_normal", times_end, A=200e3)
 
-        ph = phases[i]
-        gr = groups[i]
-        al = alphas[i]
+plot_streamfunction("drag_high", times_end, A=400e3)
 
-        # ---- theoretical curves ----
-        phase_theos = phase_theo(kRs, al)
-        group_theos = group_theo(kRs, al)
+plot_streamfunction("drag_low", times_end, A=100e3)
 
-        ax.plot(
-            kRs,
-            phase_theos,
-            linestyle="--",
-            c=f"C{i}",
-            label=fr"Theo. phase "
-        )
+plot_streamfunction("drag_very_low", times_end, A=10e3)
+"""
 
-        ax.plot(
-            kRs,
-            group_theos,
-            linestyle="-",
-            c=f"C{i}",
-            label=fr"Theo. group "
-        )
 
-        # ---- theoretical points ----
-        ax.scatter(
-            kR,
-            phase_theo(kR, al),
-            marker="o", label="theo. phase",
-            alpha=0.3,
-            c=f"C{i}"
-        )
-
-        ax.scatter(
-            kR,
-            group_theo(kR, al),
-            marker="s", label="theo. group",
-            alpha=0.3,
-            c=f"C{i}"
-        )
-
-        # ---- numerical points ----
-        ax.scatter(
-            kR,
-            ph,
-            c=f"C{i}",
-            label=fr"Num. phase "
-        )
-
-        ax.scatter(
-            kR,
-            gr,
-            marker="s",
-            c=f"C{i}",
-            label=fr"Num. group "
-        )
-
-        # ---- optional error arrows ----
-        """
-        ax.annotate(
-            "",
-            xy=(kR, ph),
-            xytext=(kR, phase_theo(kR, al)),
-            arrowprops=dict(
-                arrowstyle="<->",
-                color=f"C{i}",
-                lw=1.5,
-                alpha=0.4
-            )
-        )
-
-        ax.annotate(
-            "",
-            xy=(kR, gr),
-            xytext=(kR, group_theo(kR, al)),
-            arrowprops=dict(
-                arrowstyle="<->",
-                color=f"C{i}",
-                lw=1.5,
-                alpha=0.4
-            )
-        )
-        """
-
-    # ---- formatting ----
-    ax.axhline(0, color="black")
-    ax.grid(True, linestyle="--", alpha=0.6)
-
-    ax.set_xlim(0, 8)
-
-    ax.set_title(
-        fr"$\alpha={alphas[base_index]:.2e}$ vs $\alpha={alphas[extra_i]:.2e}$"
-    )
-
-    ax.set_xlabel(r"$kR$ [-]")
-    ax.legend()
-
-axes[0].set_ylabel("Velocity [m/s]")
-
-fig.suptitle(r"Topographic Phase and Group Speeds", fontsize=16)
-
-plt.tight_layout()
-
-save_name = "dispersion_topo"
+plot_streamfunction("no_drag_beta_plane_large_domain", [24,24+12,2*24], u10=5, Lx=14e6, show=True)
 
 
 
 
-
-data_out = np.column_stack([alphas, phases, groups, phases_theo, groups_theo])
-
-np.savetxt(
-    "speeds_topo_test.txt",
-    data_out,
-    comments=""
-)

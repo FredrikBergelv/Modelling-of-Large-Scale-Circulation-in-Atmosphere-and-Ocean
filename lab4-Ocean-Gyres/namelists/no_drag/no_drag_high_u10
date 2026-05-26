@@ -20,7 +20,7 @@ l_bottom_friction = .FALSE. ! Do we want bottom friction?
 nu = 0.0                    ! Value of friction parameter
 !!
 l_wind = .TRUE.           ! Do we want wind forcing?
-u10 = 15.                 ! Wind at 10 meters
+u10 = 6.                 ! Wind at 10 meters
 !!
 l_munk_v = .FALSE.         ! Do we want laplace friction in v
 l_munk_u = .FALSE.         ! Do we want laplace friction in u also
