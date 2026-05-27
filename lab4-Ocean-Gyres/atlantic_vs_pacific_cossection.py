@@ -7,24 +7,25 @@ import cmocean
 # PARAMETERS
 # ==========================================================
 D = 3000
-Lx = Ly = 7e6
-Nx = Ny = 200
-dx = dy = Lx / Nx
 
 rho = 1027
 f0 = 7.27e-5
 beta = 1.98e-11
 
-Ekman_ratio = D/50
+Ekman_ratio = D / 50
+
 
 # ==========================================================
 # THEORETICAL SOLUTIONS
 # ==========================================================
-def sverdrup(x, y, u10):
+def sverdrup(x, y, u10, Lx):
 
-    dx_here = Lx / Nx
+    Nx = len(x)
+    dx = Lx / Nx
 
     tau0 = 1.225 * 1.5 * 0.001 * (u10**2)
+
+    Ly = np.max(y) - np.min(y)
 
     curl_tau = (
         -np.pi / Ly
@@ -43,32 +44,11 @@ def sverdrup(x, y, u10):
         for i in reversed(range(len(x))):
 
             if i < len(x) - 1:
-                integral += v_s[j] * dx_here
+                integral += v_s[j] * dx
 
             psi[j, i] = integral
-            
+
     return -psi / 1e6
-
-
-def munk(x, y, A, u10=10):
-
-    psi_s = sverdrup(x, y, u10=u10)
-
-    dm = (A / beta) ** (1 / 3)
-    
-    print("dm/dx = ", dm/dx)
-
-    factor_x = (
-        1
-        - np.exp(-x / (2 * dm))
-        * (
-            np.cos(x * np.sqrt(3) / (2 * dm))
-            + (1 / np.sqrt(3))
-            * np.sin(x * np.sqrt(3) / (2 * dm))
-        )
-    )
-
-    return psi_s * factor_x[None, :]
 
 
 # ==========================================================
@@ -85,6 +65,8 @@ def compute_streamfunction(folder, time):
     x = h_ds["x"].values
     y = h_ds["y"].values
 
+    dx = x[1] - x[0]
+
     psi = -np.cumsum(
         (v.values * D * dx)[:, ::-1],
         axis=1
@@ -96,7 +78,7 @@ def compute_streamfunction(folder, time):
 # ==========================================================
 # CROSS SECTION EXTRACTOR
 # ==========================================================
-def extract_centerline(x, y, field):
+def extract_centerline(y, field):
 
     j0 = np.argmin(np.abs(y - 0))
 
@@ -104,16 +86,15 @@ def extract_centerline(x, y, field):
 
 
 # ==========================================================
-# PLOT ROW FUNCTION
+# DOMAIN COMPARISON FUNCTION
 # ==========================================================
-def plot_case_row_cross(
+def plot_domain_compare_cross(
     folders,
-    values,
-    label,
-    save_name,
-    time=1e10,
-    u10=False,
-    A=False,
+    labels,
+    Lx_values,
+    u10_value=5,
+    save_name="domain_compare_cross",
+    time=2*24,
     show=False
 ):
 
@@ -123,7 +104,7 @@ def plot_case_row_cross(
         2,
         n,
         figsize=(3.7*n, 6),
-        sharex=True
+        sharex=False
     )
 
     # ------------------------------------------------------
@@ -135,37 +116,42 @@ def plot_case_row_cross(
     model_v_profiles = []
     theory_v_profiles = []
 
-    x_global = None
+    x_profiles = []
 
     # ------------------------------------------------------
     # LOAD DATA
     # ------------------------------------------------------
     for i, folder in enumerate(folders):
 
-        x, y, psi, v = compute_streamfunction(folder, time)
+        x, y, psi, v = compute_streamfunction(
+            folder,
+            time
+        )
 
-        x_global = x
+        dx = x[1] - x[0]
+
+        x_profiles.append(x)
 
         # --------------------------------------------------
         # MODEL
         # --------------------------------------------------
-        model_profile = extract_centerline(x, y, psi)
+        model_profile = extract_centerline(y, psi)
         model_profiles.append(model_profile)
 
-        model_v = extract_centerline(x, y, v)
-        model_v_profiles.append(Ekman_ratio*model_v)
+        model_v = extract_centerline(y, v)
+        model_v_profiles.append(Ekman_ratio * model_v)
 
         # --------------------------------------------------
         # THEORY
         # --------------------------------------------------
-        if A:
-            psi_theo = munk(x, y, A=values[i])
-
-        if u10:
-            psi_theo = sverdrup(x, y, u10=values[i])
+        psi_theo = sverdrup(
+            x,
+            y,
+            u10=u10_value,
+            Lx=Lx_values[i]
+        )
 
         theory_profile = extract_centerline(
-            x,
             y,
             psi_theo
         )
@@ -178,7 +164,9 @@ def plot_case_row_cross(
             dx
         ) / D
 
-        theory_v_profiles.append(Ekman_ratio*theory_v)
+        theory_v_profiles.append(
+            Ekman_ratio * theory_v
+        )
 
     # ------------------------------------------------------
     # COMMON Y LIMITS
@@ -205,7 +193,7 @@ def plot_case_row_cross(
         ax_top = axes[0, i]
         ax_bottom = axes[1, i]
 
-        x_km = x_global / 1000
+        x_km = x_profiles[i] / 1000
 
         # ==================================================
         # TOP ROW : PSI
@@ -253,9 +241,7 @@ def plot_case_row_cross(
         # ==================================================
         # LABELS
         # ==================================================
-        ax_top.set_title(
-            folders[i].replace("_", " ").title()
-        )
+        ax_top.set_title(labels[i])
 
         ax_top.grid(alpha=0.3)
         ax_bottom.grid(alpha=0.3)
@@ -263,59 +249,20 @@ def plot_case_row_cross(
         ax_bottom.set_xlabel("Latitude, x [km]")
 
         # ==================================================
-        # PARAMETER TEXT
+        # TEXT
         # ==================================================
-        if A:
-
-            text = rf"$A={values[i]:.0e}$ m²/s"
-
-            ax_top.text(
-                0.95,
-                0.95,
-                text,
-                transform=ax_top.transAxes,
-                ha="right",
-                va="top",
-                bbox=dict(
-                    facecolor="white",
-                    alpha=0.8
-                )
+        ax_top.text(
+            0.95,
+            0.95,
+            rf"$L_x={Lx_values[i]/1e6:.0f}\times10^6$ m",
+            transform=ax_top.transAxes,
+            ha="right",
+            va="top",
+            bbox=dict(
+                facecolor="white",
+                alpha=0.8
             )
-
-            dm = (values[i] / beta) ** (1/3)
-
-            ax_top.axvline(
-                dm / 1000,
-                linestyle=":",
-                color="gray",
-                linewidth=2,
-                label=r"$x=\delta_M$"
-            )
-
-            ax_bottom.axvline(
-                dm / 1000,
-                linestyle=":",
-                color="gray",
-                linewidth=2,
-                label=r"$x=\delta_M$"
-            )
-
-        if u10:
-
-            text = rf"$U_{{10}}={values[i]}$ m/s"
-
-            ax_top.text(
-                0.95,
-                0.95,
-                text,
-                transform=ax_top.transAxes,
-                ha="right",
-                va="top",
-                bbox=dict(
-                    facecolor="white",
-                    alpha=0.8
-                )
-            )
+        )
 
     # ======================================================
     # AXIS LABELS
@@ -332,7 +279,7 @@ def plot_case_row_cross(
     # LAYOUT
     # ======================================================
     plt.suptitle(
-        "Gyre Streamfunction Cross-Section (y = 0)",
+        "Domain Size Comparison (y = 0)",
         size=14
     )
 
@@ -359,33 +306,29 @@ def plot_case_row_cross(
 
 
 # ==========================================================
-# RUN CASES
+# RUN CASE
 # ==========================================================
-
-# WIND SPEED COMPARISON
-plot_case_row_cross(
+plot_domain_compare_cross(
     folders=[
-        "no_drag_low_u10",
         "no_drag_intermediate_u10",
-        "no_drag_high_u10"
+        "no_drag_beta_plane_large_domain"
     ],
-    values=[4, 5, 6],
-    label=r"$U_{10}$",
-    save_name="u10_cross_section",
-    u10=True,
-    time=2 * 24
-)
 
-# MUNK COMPARISON
-plot_case_row_cross(
-    folders=[
-        "drag_low",
-        "drag_intermediate",
-        "drag_high"
+    labels=[
+        "North Atlantic",
+        "North Pacific"
     ],
-    values=[10e3, 100e3, 500e3],
-    label="A",
-    save_name="munk_cross_section",
-    A=True,
-    time=1e10
+
+    Lx_values=[
+        7e6,
+        14e6
+    ],
+
+    u10_value=5,
+
+    save_name="domain_compare_cross",
+
+    time=2 * 24,
+
+    show=False
 )

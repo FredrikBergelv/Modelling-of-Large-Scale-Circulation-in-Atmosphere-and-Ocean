@@ -154,13 +154,14 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
                 vmin=0,
                 vmax=8
             )
-
+    
             # -------- THEORY --------
-            if A is not None:
+            if labels[i] == "Munk drag ON":
+                A=1e5
                 psi_theo = munk(x, y_plot, A, Lx)
                 ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
 
-            if u10 is not None:
+            if labels[i] == "Munk drag OFF":
                 psi_theo = sverdrup(x, y_plot, u10, Lx)
                 ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
 
@@ -191,7 +192,7 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
     # COLORBAR
     # =========================
     cbar = fig.colorbar(cf, ax=axes, shrink=0.5, pad=0.02)
-    cbar.set_label(r"Streamfunction, $\Psi$ [Sv],fontsize=11")
+    cbar.set_label(r"Streamfunction, $\Psi$ [Sv]",fontsize=11)
 
     plt.suptitle("Ocean Gyres Streamfunction", size=16)
     fig.set_constrained_layout(True)
