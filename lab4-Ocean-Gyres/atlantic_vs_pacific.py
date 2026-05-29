@@ -17,7 +17,12 @@ beta = 1.98e-11
 # THEORETICAL MODELS
 # =========================
 
-def sverdrup(x, y, u10, Lx=Lx, Nx=Nx):
+def sverdrup(x, y, u10, Nx, Lx):
+
+    # ------------------------------------------------------
+    # USE ACTUAL GRID SIZE
+    # ------------------------------------------------------
+    Nx = len(x)
 
     dx_here = Lx / Nx
 
@@ -50,6 +55,7 @@ def sverdrup(x, y, u10, Lx=Lx, Nx=Nx):
 
             psi[j, i] = integral
 
+    # IMPORTANT
     return -psi
 
 
@@ -184,6 +190,13 @@ def plot_streamfunction_compare(
 
         if u10:
 
+            if (folder == "no_drag_intermediate_u10"):
+                Lx = 7000000
+                Nx = 200
+            elif (folder == "no_drag_beta_plane_large_domain"):
+                Lx = 14000000
+                Nx = 400
+
             psi_theo = sverdrup(
                 x,
                 y,
@@ -200,15 +213,15 @@ def plot_streamfunction_compare(
                 linewidths=1
             )
             
-            """
+
             # Inline contour labels
             ax.clabel(
                 cs,
                 inline=True,
                 fontsize=8,
-                fmt="%.1e"
+                fmt="%.1f"
             )
-            """
+
 
 
         # --------------------------------------------------
@@ -232,6 +245,24 @@ def plot_streamfunction_compare(
                 r"Longitude, $y$ [km]",
                 fontsize=11
             )
+        
+        if (label == "North Atlantic"):
+            txt = 7000000
+        elif (label == "North Pacific"):
+            txt = 14000000
+
+        ax.text(
+            0.95,
+            0.95,
+            rf"$L_x={txt/1e6:.0f}\times10^6$ m",
+            transform=ax.transAxes,
+            ha="right",
+            va="top",
+            bbox=dict(
+                facecolor="white",
+                alpha=0.8
+            )
+        )
 
     # ------------------------------------------------------
     # COLORBAR
