@@ -1,0 +1,239 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import xarray as xr
+import cmocean
+
+D = 3000
+Lx = Ly = 7e6
+Nx = Ny = 200
+dx = dy = Lx / Nx
+rho = 1027
+f0 = 7.27e-5
+beta = 1.98e-11
+
+
+# ==========================================================
+# THEORETICAL SOLUTIONS
+# ==========================================================
+
+def sverdrup(x, y, u10):
+
+    dx_here = Lx / Nx
+
+    tau0 = 1.225 * 1.5 * 0.001 * (u10**2)
+
+    curl_tau = (
+        -np.pi / Ly
+        * tau0
+        * np.cos(np.pi * y / Ly)
+    )
+
+    v_s = curl_tau / (rho * beta)
+
+    psi = np.zeros((len(y), len(x)))
+
+    for j in range(len(y)):
+        integral = 0.0
+
+        for i in reversed(range(len(x))):
+            if i < len(x) - 1:
+                integral += v_s[j] * dx_here
+            psi[j, i] = integral
+
+    return -psi
+
+
+def munk(x, y, A, u10=10):
+
+    psi_s = sverdrup(x, y, u10=u10)
+
+    dm = (A / beta) ** (1 / 3)
+
+    factor_x = (
+        1
+        - np.exp(-x / (2 * dm))
+        * (
+            np.cos(x * np.sqrt(3) / (2 * dm))
+            + (1 / np.sqrt(3))
+            * np.sin(x * np.sqrt(3) / (2 * dm))
+        )
+    )
+
+    psi = psi_s * factor_x[None, :]
+
+    return psi
+
+
+# ==========================================================
+# SINGLE PANEL FUNCTION (UPDATED: TIME AVERAGE)
+# ==========================================================
+
+def compute_streamfunction(folder, time_start=24*2):
+
+    h_ds = xr.open_dataset(f"data/{folder}/h.nc")
+    v_ds = xr.open_dataset(f"data/{folder}/v.nc")
+
+    x = h_ds["x"].values
+    y = h_ds["y"].values
+
+    # ------------------------------------------------------
+    # TIME AVERAGE AFTER time_start
+    # ------------------------------------------------------
+    v = v_ds["v"].sel(time=slice(time_start, None)).mean("time")
+
+    v = v.values
+
+    # ------------------------------------------------------
+    # STREAMFUNCTION
+    # ------------------------------------------------------
+    psi = -np.cumsum((v * D * dx)[:, ::-1], axis=1)[:, ::-1]
+
+    if psi.shape[0] != len(y):
+        y_plot = np.linspace(y[0], y[-1], psi.shape[0])
+    else:
+        y_plot = y
+
+    return x, y_plot, psi / 1e6
+
+
+# ==========================================================
+# MULTI-PANEL PLOTTER
+# ==========================================================
+
+def plot_case_row(
+    folders,
+    values,
+    label,
+    save_name,
+    time_start=24*2,
+    u10=False,
+    A=False,
+    show=False
+):
+
+    n = len(folders)
+
+    fig, axes = plt.subplots(
+        1,
+        n,
+        figsize=(4*n, 4.4),
+        sharex=True,
+        sharey=True,
+        squeeze=False
+    )
+
+    axes = axes[0]
+
+    psi_all = []
+
+    # ------------------------------------------------------
+    # FIRST PASS (COLOR RANGE)
+    # ------------------------------------------------------
+    for folder in folders:
+        x, y_plot, psi = compute_streamfunction(folder, time_start)
+        psi_all.append(psi)
+
+    vmin = np.min([p.min() for p in psi_all])
+    vmax = np.max([p.max() for p in psi_all])
+
+    # ------------------------------------------------------
+    # SECOND PASS (PLOTTING)
+    # ------------------------------------------------------
+    for i, ax in enumerate(axes):
+
+        folder = folders[i]
+        value = values[i]
+
+        x, y_plot, psi = compute_streamfunction(folder, time_start)
+
+        cf = ax.contourf(
+            x / 1000,
+            y_plot / 1000,
+            psi,
+            cmap="cmo.haline",
+            levels=8,
+            vmin=vmin,
+            vmax=vmax
+        )
+
+        text = ""
+
+        # ----------------------------------------------
+        # THEORY
+        # ----------------------------------------------
+        if A:
+            psi_theo = munk(x, y_plot, A=value)
+
+            cs = ax.contour(
+                x / 1000,
+                y_plot / 1000,
+                psi_theo/10**6,
+                colors="red",
+                linewidths=1
+            )
+
+            ax.clabel(cs, inline=True, fontsize=8, fmt="%.1f")
+
+            text = f"{label} = {value:.0e} m²/s"
+
+        # ----------------------------------------------
+        # LABELS
+        # ----------------------------------------------
+        ax.set_title(folder.replace("_", " ").title(), fontsize=13)
+
+        ax.text(
+            0.98,
+            0.97,
+            text,
+            transform=ax.transAxes,
+            ha="right",
+            va="top",
+            fontsize=10,
+            bbox=dict(facecolor="white", alpha=0.8, edgecolor="none")
+        )
+
+        ax.set_xlabel(r"Latitude, $x$ [km]", fontsize=11)
+
+        if i == 0:
+            ax.set_ylabel(r"Longitude, $y$ [km]", fontsize=11)
+
+    # ------------------------------------------------------
+    # COLORBAR
+    # ------------------------------------------------------
+    cbar = fig.colorbar(
+        cf,
+        ax=axes,
+        location="right",
+        shrink=0.85,
+        pad=0.01
+    )
+
+    cbar.set_label(r"Streamfunction, $\Psi$ [Sv]", fontsize=11)
+
+    plt.suptitle("Time-averaged, Ocean Gyre Streamfunction", size=16)
+    fig.set_constrained_layout(True)
+
+    plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"ocean-gyres-report/Figures/{save_name}.png", dpi=300, bbox_inches="tight")
+
+    print(f"Saved as {save_name}")
+
+    if show:
+        plt.show()
+
+
+# ==========================================================
+# RUN
+# ==========================================================
+plot_case_row(
+    folders=[
+        "drag_low",
+        "drag_intermediate",
+        "drag_high"
+    ],
+    values=[30e3, 100e3, 500e3],
+    label="A",
+    save_name="munk_comparison",
+    A=True,
+    time_start=24*2
+)

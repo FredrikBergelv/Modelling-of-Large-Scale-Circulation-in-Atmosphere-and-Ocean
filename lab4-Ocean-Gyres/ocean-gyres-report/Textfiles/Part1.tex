@@ -35,9 +35,9 @@ since we assume $\Psi(x_\text{East},y)=0$. The reason for assuming the eastern b
     \label{eq:theory}
 \end{equation}
 
-This gives an interesting shape of the gyre, where we see a net southward velocity in the latitudinal center of the domain, and less flux away from the center. Observing \autoref{eq:theory}, one can see that this yields positive streamfunction values. We will thus see a "parabolic-like" structure along the longitudinal direction, with the peak of the parabola in the east. We thus see a large flux close to the western boundary and zero flux close to the eastern boundary. 
+This gives an interesting shape of the gyre, where we see a net southward velocity in the latitudinal center of the domain, and less flux away from the center. Observing \autoref{eq:theory}, one can see that this yields positive streamfunction values. We will thus see a "parabolic-like" structure along the longitudinal direction, with the peak of the parabola in the east. We thus see zero flux close to the eastern boundary. 
 
-\textbf{v)} In Munk theory we also add a Laplace friction term to the shallow water equations, however we only assume that we are given the set of shallow water equations as 
+\textbf{v)} In traditional Munk theory we also add a Laplace friction term to the shallow water equations. We thus assume that we are given the set of shallow water equations as 
 \begin{subequations}
     \label{eq:SWE}
 \begin{empheq}[left=\empheqlbrace]{align}
@@ -68,13 +68,13 @@ However, in the Munk theory we have some additional assumptions:
 \begin{equation}
     \Psi(x,y)=\Psi_\text{Sverdrup}(x,y)\left(1-e^{-\frac{x-x_\text{West}}{2\delta_m}}\left[\cos\left(\sqrt{3}\frac{x-x_\text{West}}{2\delta_m}\right)+\frac{1}{\sqrt{3}\sin\left(\sqrt{3}\frac{x-x_\text{West}}{2\delta_m}\right)}\right]\right),
 \end{equation}
-$\Psi_\text{Sverdrup}$ is the Sverdrup solution and $\delta_M$ is the Munk layer defined as 
+where $\Psi_\text{Sverdrup}$ is the Sverdrup solution and $\delta_M$ is the Munk layer defined as 
 \begin{equation}
     \delta_M\equiv\left(\frac{A}{\beta}\right)^{\tfrac{1}{3}}.
 \end{equation}
 The Munk layer is the distance from the boundary to the latitude of largest northward meridional velocity. 
 
-\textbf{vii)} One can approximate the wind stress in the North Atlantic with 
+\textbf{viii)} One can approximate the wind stress in the North Atlantic with 
 \begin{equation}
     \tau=\rho_\text{air}C_DU_{10}^2\,\sin\left(\frac{\pi y}{L_y}\right),
 \end{equation}

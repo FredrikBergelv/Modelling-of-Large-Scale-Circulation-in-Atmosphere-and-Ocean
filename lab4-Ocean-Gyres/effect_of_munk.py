@@ -149,7 +149,7 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
                 x / 1000,
                 y_plot / 1000,
                 psi,
-                levels=20,
+                levels=8,
                 cmap="cmo.haline",
                 vmin=0,
                 vmax=8
@@ -159,11 +159,33 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
             if labels[i] == "Munk drag ON":
                 A=1e5
                 psi_theo = munk(x, y_plot, A, Lx)
-                ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
+                
+                cs = ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
+
+                """
+                # Inline contour labels
+                ax.clabel(
+                    cs,
+                    inline=True,
+                    fontsize=8,
+                    fmt="%.1e"
+                )
+                """
 
             if labels[i] == "Munk drag OFF":
                 psi_theo = sverdrup(x, y_plot, u10, Lx)
-                ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
+                
+                cs = ax.contour(x / 1000, y_plot / 1000, psi_theo, colors="red", linewidths=1)
+                          
+                # Inline contour labels
+                """
+                ax.clabel(
+                    cs,
+                    inline=True,
+                    fontsize=8,
+                    fmt="%.1e"
+                )
+                """
 
             # -------- LABELS --------
             days = t // 24

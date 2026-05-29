@@ -6,9 +6,9 @@ Ny = 200                 ! Number of y T points
 Lx = 7.E6                ! Width of domain in x [m]  1.e6 = 1000 km
 Ly = 7.E6                ! Width of domain in y [m]  1.e6 = 1000 km
 !!
-Tm_d = 14.                       ! Length of the run in days
-rfsave = 24.                       ! Timestep at which to save fields in hours.
-data_name = 'data/no_drag_low_u10'          ! Name of folder to save
+Tm_d = 30.                       ! Length of the run in days
+rfsave = 12.                      ! Timestep at which to save fields in hours.
+data_name = 'data/no_drag_intermediate_u10'          ! Name of folder to save
 /
 
 &nphysics
@@ -20,7 +20,7 @@ l_bottom_friction = .FALSE. ! Do we want bottom friction?
 nu = 0.0                    ! Value of friction parameter
 !!
 l_wind = .TRUE.           ! Do we want wind forcing?
-u10 = 4.                 ! Wind at 10 meters
+u10 = 5.                 ! Wind at 10 meters
 !!
 l_munk_v = .FALSE.         ! Do we want laplace friction in v
 l_munk_u = .FALSE.         ! Do we want laplace friction in u also

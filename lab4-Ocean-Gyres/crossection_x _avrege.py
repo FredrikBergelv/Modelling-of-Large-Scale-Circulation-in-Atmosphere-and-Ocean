@@ -7,6 +7,9 @@ import cmocean
 # PARAMETERS
 # ==========================================================
 D = 3000
+Lx = Ly = 7e6
+Nx = Ny = 200
+dx = dy = Lx / Nx
 
 rho = 1027
 f0 = 7.27e-5
@@ -14,18 +17,14 @@ beta = 1.98e-11
 
 Ekman_ratio = D / 50
 
-
 # ==========================================================
 # THEORETICAL SOLUTIONS
 # ==========================================================
-def sverdrup(x, y, u10, Lx):
+def sverdrup(x, y, u10):
 
-    Nx = len(x)
-    dx = Lx / Nx
+    dx_here = Lx / Nx
 
     tau0 = 1.225 * 1.5 * 0.001 * (u10**2)
-
-    Ly = np.max(y) - np.min(y)
 
     curl_tau = (
         -np.pi / Ly
@@ -44,46 +43,72 @@ def sverdrup(x, y, u10, Lx):
         for i in reversed(range(len(x))):
 
             if i < len(x) - 1:
-                integral += v_s[j] * dx
+                integral += v_s[j] * dx_here
 
             psi[j, i] = integral
 
     return -psi / 1e6
 
 
+def munk(x, y, A, u10=10):
+
+    psi_s = sverdrup(x, y, u10=u10)
+
+    dm = (A / beta) ** (1 / 3)
+
+    print("dm/dx = ", dm / dx)
+
+    factor_x = (
+        1
+        - np.exp(-x / (2 * dm))
+        * (
+            np.cos(x * np.sqrt(3) / (2 * dm))
+            + (1 / np.sqrt(3))
+            * np.sin(x * np.sqrt(3) / (2 * dm))
+        )
+    )
+
+    return psi_s * factor_x[None, :]
+
+
 # ==========================================================
 # MODEL STREAMFUNCTION
 # ==========================================================
-def compute_streamfunction(folder, time_start):
+def compute_streamfunction_average(folder, time_start):
 
     h_ds = xr.open_dataset(f"data/{folder}/h.nc")
     v_ds = xr.open_dataset(f"data/{folder}/v.nc")
 
     # ------------------------------------------------------
-    # TIME AVERAGE OVER ALL TIMES AFTER time_start
+    # SELECT ALL TIMES AFTER time_start
     # ------------------------------------------------------
-    v = v_ds["v"].where(
-        v_ds["time"] >= time_start,
-        drop=True
-    ).mean(dim="time")
+    v = v_ds["v"].sel(time=slice(time_start, None))
 
     x = h_ds["x"].values
     y = h_ds["y"].values
 
-    dx = x[1] - x[0]
+    # ------------------------------------------------------
+    # COMPUTE STREAMFUNCTION FOR EACH TIME
+    # ------------------------------------------------------
+    psi_all = -np.cumsum(
+        (v.values * D * dx)[:, :, ::-1],
+        axis=2
+    )[:, :, ::-1]
 
-    psi = -np.cumsum(
-        (v.values * D * dx)[:, ::-1],
-        axis=1
-    )[:, ::-1]
+    # ------------------------------------------------------
+    # TIME AVERAGE
+    # ------------------------------------------------------
+    psi_mean = np.mean(psi_all, axis=0)
 
-    return x, y, psi / 1e6, v.values
+    v_mean = np.mean(v.values, axis=0)
+
+    return x, y, psi_mean / 1e6, v_mean
 
 
 # ==========================================================
 # CROSS SECTION EXTRACTOR
 # ==========================================================
-def extract_centerline(y, field):
+def extract_centerline(x, y, field):
 
     j0 = np.argmin(np.abs(y - 0))
 
@@ -91,15 +116,16 @@ def extract_centerline(y, field):
 
 
 # ==========================================================
-# DOMAIN COMPARISON FUNCTION
+# PLOT ROW FUNCTION
 # ==========================================================
-def plot_domain_compare_cross(
+def plot_case_row_cross(
     folders,
-    labels,
-    Lx_values,
-    u10_value=5,
-    save_name="domain_compare_cross",
-    time_start=2*24,
+    values,
+    label,
+    save_name,
+    time_start=2 * 24,
+    u10=False,
+    A=False,
     show=False
 ):
 
@@ -108,8 +134,8 @@ def plot_domain_compare_cross(
     fig, axes = plt.subplots(
         2,
         n,
-        figsize=(3.7*n, 6),
-        sharex=False
+        figsize=(3.7 * n, 6),
+        sharex=True
     )
 
     # ------------------------------------------------------
@@ -121,49 +147,49 @@ def plot_domain_compare_cross(
     model_v_profiles = []
     theory_v_profiles = []
 
-    x_profiles = []
+    x_global = None
 
     # ------------------------------------------------------
     # LOAD DATA
     # ------------------------------------------------------
     for i, folder in enumerate(folders):
 
-        x, y, psi, v = compute_streamfunction(
+        x, y, psi, v = compute_streamfunction_average(
             folder,
             time_start
         )
 
-        dx = x[1] - x[0]
-
-        x_profiles.append(x)
+        x_global = x
 
         # --------------------------------------------------
         # MODEL
         # --------------------------------------------------
-        model_profile = extract_centerline(y, psi)
+        model_profile = extract_centerline(x, y, psi)
         model_profiles.append(model_profile)
 
-        model_v = extract_centerline(y, v)
+        model_v = extract_centerline(x, y, v)
         model_v_profiles.append(Ekman_ratio * model_v)
 
         # --------------------------------------------------
         # THEORY
         # --------------------------------------------------
-        psi_theo = sverdrup(
-            x,
-            y,
-            u10=u10_value,
-            Lx=Lx_values[i]
-        )
+        if A:
+            psi_theo = munk(x, y, A=values[i])
+
+        if u10:
+            psi_theo = sverdrup(x, y, u10=values[i])
 
         theory_profile = extract_centerline(
+            x,
             y,
             psi_theo
         )
 
         theory_profiles.append(theory_profile)
 
-        # v = dpsi/dx
+        # --------------------------------------------------
+        # THEORETICAL VELOCITY
+        # --------------------------------------------------
         theory_v = np.gradient(
             theory_profile * 1e6,
             dx
@@ -198,7 +224,7 @@ def plot_domain_compare_cross(
         ax_top = axes[0, i]
         ax_bottom = axes[1, i]
 
-        x_km = x_profiles[i] / 1000
+        x_km = x_global / 1000
 
         # ==================================================
         # TOP ROW : PSI
@@ -246,7 +272,9 @@ def plot_domain_compare_cross(
         # ==================================================
         # LABELS
         # ==================================================
-        ax_top.set_title(labels[i])
+        ax_top.set_title(
+            folders[i].replace("_", " ").title()
+        )
 
         ax_top.grid(alpha=0.3)
         ax_bottom.grid(alpha=0.3)
@@ -254,20 +282,59 @@ def plot_domain_compare_cross(
         ax_bottom.set_xlabel("Latitude, x [km]")
 
         # ==================================================
-        # TEXT
+        # PARAMETER TEXT
         # ==================================================
-        ax_top.text(
-            0.95,
-            0.95,
-            rf"$L_x={Lx_values[i]/1e6:.0f}\times10^6$ m",
-            transform=ax_top.transAxes,
-            ha="right",
-            va="top",
-            bbox=dict(
-                facecolor="white",
-                alpha=0.8
+        if A:
+
+            text = rf"$A={values[i]:.0e}$ m²/s"
+
+            ax_top.text(
+                0.95,
+                0.95,
+                text,
+                transform=ax_top.transAxes,
+                ha="right",
+                va="top",
+                bbox=dict(
+                    facecolor="white",
+                    alpha=0.8
+                )
             )
-        )
+
+            dm = (values[i] / beta) ** (1 / 3)
+
+            ax_top.axvline(
+                dm / 1000,
+                linestyle=":",
+                color="gray",
+                linewidth=2,
+                label=r"$x=\delta_M$"
+            )
+
+            ax_bottom.axvline(
+                dm / 1000,
+                linestyle=":",
+                color="gray",
+                linewidth=2,
+                label=r"$x=\delta_M$"
+            )
+
+        if u10:
+
+            text = rf"$U_{{10}}={values[i]}$ m/s"
+
+            ax_top.text(
+                0.95,
+                0.95,
+                text,
+                transform=ax_top.transAxes,
+                ha="right",
+                va="top",
+                bbox=dict(
+                    facecolor="white",
+                    alpha=0.8
+                )
+            )
 
     # ======================================================
     # AXIS LABELS
@@ -284,7 +351,7 @@ def plot_domain_compare_cross(
     # LAYOUT
     # ======================================================
     plt.suptitle(
-        "Time-averaged, Domain Size Comparison (y = 0)",
+        "Time-averaged, Gyre Streamfunction Cross-Section (y = 0)",
         size=14
     )
 
@@ -311,29 +378,20 @@ def plot_domain_compare_cross(
 
 
 # ==========================================================
-# RUN CASE
+# RUN CASES
 # ==========================================================
-plot_domain_compare_cross(
+
+# WIND SPEED COMPARISON
+plot_case_row_cross(
     folders=[
+        "no_drag_low_u10",
         "no_drag_intermediate_u10",
-        "no_drag_beta_plane_large_domain"
+        "no_drag_high_u10"
     ],
-
-    labels=[
-        "North Atlantic",
-        "North Pacific"
-    ],
-
-    Lx_values=[
-        7e6,
-        14e6
-    ],
-
-    u10_value=5,
-
-    save_name="domain_compare_cross",
-
-    time_start=2 * 24,
-
-    show=False
+    values=[4, 5, 6],
+    label=r"$U_{10}$",
+    save_name="u10_cross_section",
+    u10=True,
+    time_start=2 * 24
 )
+

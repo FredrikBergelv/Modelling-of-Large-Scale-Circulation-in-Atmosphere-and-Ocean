@@ -117,7 +117,7 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
         psi, y_plot = psi_list[i]
         actual_time = actual_times[i]
 
-        cf = ax.contourf(x / 1000, y_plot / 1000, psi, cmap='cmo.haline', levels=20, vmin=vmin, vmax=vmax)
+        cf = ax.contourf(x / 1000, y_plot / 1000, psi, cmap='cmo.haline', levels=8, vmin=vmin, vmax=vmax)
 
         # Here we do theoretical solutions!
         if A:

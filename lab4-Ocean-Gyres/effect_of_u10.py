@@ -7,6 +7,7 @@ D = 3000
 Lx = Ly = 7e6
 Nx = Ny = 200
 dx = dy = Lx / Nx
+
 rho = 1027
 f0 = 7.27e-5
 beta = 1.98e-11
@@ -46,7 +47,7 @@ def sverdrup(x, y, u10):
 
             psi[j, i] = integral
 
-    return -psi 
+    return -psi
 
 
 def munk(x, y, A, u10=10):
@@ -74,22 +75,39 @@ def munk(x, y, A, u10=10):
 # SINGLE PANEL FUNCTION
 # ==========================================================
 
-def compute_streamfunction(folder, time):
+def compute_streamfunction(folder, time_start):
 
     h_ds = xr.open_dataset(f"data/{folder}/h.nc")
     v_ds = xr.open_dataset(f"data/{folder}/v.nc")
 
-    h = h_ds["h"].sel(time=time, method="nearest")
-    v = v_ds["v"].sel(time=time, method="nearest")
+    # ------------------------------------------------------
+    # TIME AVERAGE
+    # ------------------------------------------------------
+    v_mean = v_ds["v"].where(
+        v_ds["time"] >= time_start,
+        drop=True
+    ).mean(dim="time")
 
     x = h_ds["x"].values
     y = h_ds["y"].values
 
-    psi = -np.cumsum((v.values * D * dx)[:, ::-1], axis=1)[:, ::-1]
+    dx_local = x[1] - x[0]
+
+    psi = -np.cumsum(
+        (v_mean.values * D * dx_local)[:, ::-1],
+        axis=1
+    )[:, ::-1]
 
     if psi.shape[0] != len(y):
-        y_plot = np.linspace(y[0], y[-1], psi.shape[0])
+
+        y_plot = np.linspace(
+            y[0],
+            y[-1],
+            psi.shape[0]
+        )
+
     else:
+
         y_plot = y
 
     return x, y_plot, psi / 1e6
@@ -104,7 +122,7 @@ def plot_case_row(
     values,
     label,
     save_name,
-    time=1e10,
+    time_start=2*24,
     u10=False,
     A=False,
     show=False
@@ -126,12 +144,14 @@ def plot_case_row(
     psi_all = []
 
     # ------------------------------------------------------
-    # FIRST PASS (for common colorbar)
+    # FIRST PASS
     # ------------------------------------------------------
-
     for folder in folders:
 
-        x, y_plot, psi = compute_streamfunction(folder, time)
+        x, y_plot, psi = compute_streamfunction(
+            folder,
+            time_start
+        )
 
         psi_all.append(psi)
 
@@ -139,46 +159,32 @@ def plot_case_row(
     vmax = np.max([p.max() for p in psi_all])
 
     # ------------------------------------------------------
-    # SECOND PASS (actual plotting)
+    # SECOND PASS
     # ------------------------------------------------------
-
     for i, ax in enumerate(axes):
 
         folder = folders[i]
         value = values[i]
 
-        x, y_plot, psi = compute_streamfunction(folder, time)
+        x, y_plot, psi = compute_streamfunction(
+            folder,
+            time_start
+        )
 
         cf = ax.contourf(
             x / 1000,
             y_plot / 1000,
             psi,
             cmap="cmo.haline",
-            levels=20,
+            levels=8,
             vmin=vmin,
             vmax=vmax
         )
 
+
         # ----------------------------------------------
         # THEORETICAL SOLUTIONS
         # ----------------------------------------------
-
-        if A:
-
-            psi_theo = munk(
-                x,
-                y_plot,
-                A=value,
-            )
-
-            ax.contour(
-                x / 1000,
-                y_plot / 1000,
-                psi_theo,
-                colors="red",
-                linewidths=1
-            )
-            text=f"{label} = {value:.0e}"+" m²/s"
 
         if u10:
 
@@ -188,19 +194,27 @@ def plot_case_row(
                 u10=value,
             )
 
-            ax.contour(
+            cs=ax.contour(
                 x / 1000,
                 y_plot / 1000,
-                psi_theo,
+                psi_theo/10**6,
                 colors="red",
                 linewidths=1
             )
-            text=f"{label} = {value}"+" m/s"
+            
+            # Inline contour labels
+            ax.clabel(
+                cs,
+                inline=True,
+                fontsize=8,
+                fmt="%.1f"
+            )
+
+            text = f"{label} = {value}" + " m/s"
 
         # ----------------------------------------------
         # LABELS
         # ----------------------------------------------
-
         ax.set_title(
             folder.replace("_", " ").title(),
             fontsize=13
@@ -221,15 +235,21 @@ def plot_case_row(
             )
         )
 
-        ax.set_xlabel(r"Latitude, $x$ [km]",fontsize=11)
+        ax.set_xlabel(
+            r"Latitude, $x$ [km]",
+            fontsize=11
+        )
 
         if i == 0:
-            ax.set_ylabel(r"Longitude, $y$ [km]",fontsize=11)
+
+            ax.set_ylabel(
+                r"Longitude, $y$ [km]",
+                fontsize=11
+            )
 
     # ------------------------------------------------------
     # COLORBAR
     # ------------------------------------------------------
-
     cbar = fig.colorbar(
         cf,
         ax=axes,
@@ -239,9 +259,15 @@ def plot_case_row(
     )
 
     cbar.set_label(
-        r"Streamfunction, $\Psi$ [Sv]",fontsize=11)
+        r"Streamfunction, $\Psi$ [Sv]",
+        fontsize=11
+    )
 
-    plt.suptitle("Ocean Gyre Streamfunction", size=16)
+    plt.suptitle(
+        "Time-averaged, Ocean Gyre Streamfunction",
+        size=16
+    )
+
     fig.set_constrained_layout(True)
 
     plt.savefig(
@@ -255,7 +281,6 @@ def plot_case_row(
         dpi=300,
         bbox_inches="tight"
     )
-
 
     print(f"Saved as {save_name}")
 
@@ -271,30 +296,16 @@ plot_case_row(
     folders=[
         "no_drag_low_u10",
         "no_drag_intermediate_u10",
-        "no_drag_high_u10"],
-
-    values=[4, 5, 6],
-    label=r"$U_{10}$",
-    save_name="u10_comparison",
-    u10=True,
-    time=2*24
-    )
-
-
-# ==========================================================
-# MUNK COMPARISON
-# ==========================================================
-
-plot_case_row(
-    folders=[
-        "drag_low",
-        "drag_intermediate",
-        "drag_high"
+        "no_drag_high_u10"
     ],
 
-    values=[10e3, 100e3, 500e3],
-    label="A",
-    save_name="munk_comparison",
-    A=True,
-    time=1e10
+    values=[4, 5, 6],
+
+    label=r"$U_{10}$",
+
+    save_name="u10_comparison",
+
+    u10=True,
+
+    time_start=2 * 24
 )
