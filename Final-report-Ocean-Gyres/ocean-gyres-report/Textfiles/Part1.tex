@@ -1,0 +1,86 @@
+\section{Theory}
+\textbf{i)} \textbf{In order to derive Sverdrup gyre circulation, one needs the following assumptions: One needs a set of linear and stationary shallow water equation, one needs a wind stress, a beta plane and an inviscist fluid on a flat bottom. }
+\begin{enumerate}
+    \item The Coriolis parameter is approximated using the $\beta$-plane:
+    $$f \approx f_0 + \beta y.$$
+
+    \item The flow needs to be large-scale, steady, and geostrophic. This is the same as stating a small Rossby number and negligible friction.
+
+    \item One needs some type of forcing, such as a latitudinally changing ten meter wind. The wind forcing is represented at the ocean surface as a wind stress, which drives Ekman pumping in the surface boundary layer. This Ekman pumping is then together with mass continuity responsible for the Ekman transport in the ocean. 
+
+    \item The ocean basin is assumed to be laterally bounded, for example by having two continents on either side of the ocean.
+
+    \item We also assume a barotropic ocean, where there is no change with depth. This is however not completely true, since we also assume an Ekman layer, but since the size of this layer is much smaller than the domain, it is sufficient to say that the ocean is barotropic since $\delta_\text{Ek}\ll H$.
+\end{enumerate}
+
+\textbf{ii)} The barotropic streamfunction is a useful quantity since it combines the zonal, $u$, and meridional, $v$, velocity into one parameter. The barotropic streamfunction is defined as 
+\begin{equation}
+    \frac{\partial \Psi}{\partial x}=vH, \quad \frac{\partial \Psi}{\partial 
+    y}=-uH,
+\end{equation}
+where $H$ is the mean depth of the domain.
+
+\textbf{iii, iv)} The solution to this problem is the Sverdrup balance. Solving for an arbitrary ten meter wind stress, $\vec{\tau}$, one obtains the Sverdrup balance as 
+\begin{equation}
+    \beta v H = \frac{1}{\rho}\nabla\times\vec{\tau}.
+\end{equation}
+Using the definition of the streamfunction above, one can derive the solution for the streamfunction itself. Integrating from an arbitrary point to the eastern boundary gives 
+\begin{equation}
+\int_x^{x_\text{East}}\frac{\partial \Psi}{\partial x}\, dx = \int_x^{x_\text{East}} vH \, dx =
+\cancel{\Psi(x_\text{East},y)} - \Psi(x,y)
+\end{equation}
+since we assume $\Psi(x_\text{East},y)=0$. The reason for assuming the eastern boundary to be zero and not the western, is because we also assume that $\left(\nabla\times\vec{\tau}\right)<0$, i.e. that the wind travels clockwise around the basin. Since the water stress is in the same direction as the wind stress, we see that the water can only travel northward on the western boundary. Since the Sverdrup balance gives a net southward ocean flux in the basin center, $\left(\nabla\times\vec{\tau}\right)<0$, we must have non-zero flux on the western boundary. Using the Sverdrup balance for the meridional velocity, one can obtain a complete solution as 
+\begin{equation}
+    \Psi(x,y) = -\frac{1}{\rho\beta}\int_x^{x_\text{East}} \left(\nabla\times\vec{\tau}\right) \, dx,
+    \label{eq:theory}
+\end{equation}
+
+This gives an interesting shape of the gyre, where we see a net southward velocity in the latitudinal center of the domain, and less flux away from the center. Observing \autoref{eq:theory}, one can see that this yields positive streamfunction values. We will thus see a "parabolic-like" structure along the longitudinal direction, with the peak of the parabola in the east. We thus see zero flux close to the eastern boundary. 
+\textbf{The gyre decreases towards the east, stream lines are not closed on the western boundary}
+
+\textbf{v)} In traditional Munk theory we also add a Laplace friction term to the shallow water equations. We thus assume that we are given the set of shallow water equations as 
+\begin{subequations}
+    \label{eq:SWE}
+\begin{empheq}[left=\empheqlbrace]{align}
+     - &fv = -g \frac{\partial \eta}{\partial x}+A\nabla_H^2u+\frac{\tau^x}{\rho H} \\
+     &fu = -g \frac{\partial \eta}{\partial y}+A\nabla_H^2v+\frac{\tau^y}{\rho H} \\
+    &\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} = 0.
+\end{empheq}
+\end{subequations}
+where $u$ and $v$ are the horizontal velocity components in the $x$ and $y$ directions, $\eta$ is the free surface height, $H$ is the mean fluid depth, $f$ is the Coriolis parameter, $g$ is the acceleration due to gravity, $A$ is the Munk viscosity parameter, $\tau$ is the stress, $\rho$ is the density, and $H$ is the mean depth.
+
+However, in the Munk theory we have some additional assumptions:
+\begin{enumerate}
+    \item We assume that the horizontal lateral friction is the only relevant viscosity, and can thus ignore the zonal viscosity $\cancel{A\nabla_H^2u}$. We do this since when solving \autoref{eq:SWE} for the streamfunction we obtain 
+    \begin{equation}
+        A\nabla^4 \Psi -\beta \frac{\partial \Psi}{\partial x} = \frac{1}{\rho}\nabla\times\vec{\tau},
+        \label{eq:stream_diff}
+    \end{equation}
+    where $\tfrac{\partial \Psi}{\partial x}=vH$. Thus only the viscosity in the meridional velocity will affect the solution.  
+    
+    \item We assume that the solution in the interior remains like in the Sverdrup equation. We thus assume $\Psi\rightarrow\Psi_\text{Sverdrup}$ far away from the boundary.
+    
+    \item Finally we assume that the streamfunction is bounded by the domain and $\Psi(x_\text{East})=\Psi(x_\text{West})=0$.
+\end{enumerate}
+\textbf{Diffusive drition/vicosity (laplacian), much lager in x than y direction Boundary conditions $\Psi(x_\text{East})=\Psi(x_\text{West})=0$}
+
+
+\textbf{vi)} Thus the new Munk theory will also affect the shape of the theoretical solution. Previously we had a "parabolic-like" solution, with no closed form solution. However, with the Munk theory, we will theoretically see a western boundary current that returns the flow from the southward Sverdrup flux.   
+\textbf{Closed streamlines on wesr, but sverdrup in interior and east}
+
+\textbf{vii)} Deriving the Munk solution with \autoref{eq:stream_diff} and the assumptions above one obtains
+\begin{equation}
+    \Psi(x,y)=\Psi_\text{Sverdrup}(x,y)\left(1-e^{-\frac{x-x_\text{West}}{2\delta_m}}\left[\cos\left(\sqrt{3}\frac{x-x_\text{West}}{2\delta_m}\right)+\frac{1}{\sqrt{3}}\sin\left(\sqrt{3}\frac{x-x_\text{West}}{2\delta_m}\right)\right]\right),
+\end{equation}
+where $\Psi_\text{Sverdrup}$ is the Sverdrup solution and $\delta_M$ is the Munk layer defined as 
+\begin{equation}
+    \delta_M\equiv\left(\frac{A}{\beta}\right)^{\tfrac{1}{3}}.
+\end{equation}
+The Munk layer is the distance from the boundary to the latitude of largest northward meridional velocity. 
+
+\textbf{viii)} One can approximate the wind stress in the North Atlantic with 
+\begin{equation}
+    \tau=\rho_\text{air}C_DU_{10}^2\,\sin\left(\frac{\pi y}{L_y}\right),
+\end{equation}
+where $\rho_\text{air}$ is the air density, $C_D$ is the drag coefficient, $U_{10}$ is the wind speed measured at 10 meters above the ocean surface, and $L_y$ is the meridional extent of the basin. The sinusoidal dependence represents easterly trade winds in the southern part of the North Atlantic and westerlies in the northern part. This $\tau$ is thus a pseudo accurate approximation of the wind stress in the North Atlantic.
+\textbf{Half wavelength of sin with wind = 0 in center westerlies and tradewinds. }

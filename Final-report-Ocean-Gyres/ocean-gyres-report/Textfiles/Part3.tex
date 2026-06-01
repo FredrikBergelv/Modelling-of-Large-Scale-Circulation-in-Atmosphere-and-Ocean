@@ -1,0 +1,31 @@
+\newpage\subsection{Munk's theory}
+
+The difference by introducing Munk friction, compared to no friction, can be seen in \autoref{fig:munk_streamfunction_compare}. There one can see multiple observations. Firstly one can see that the Munk theoretical results now include the western boundary current in both the numerical and theoretical solution. Therefore, the numerical solutions agrees much better with the theoretical one, compared to the Sverdrup solution. One can also see a small difference in a small tapering of the Munk numerical and theoretical solution, compared to the Sverdrup solution. 
+
+However, the largest distinctions is the steady state convergence of the two different theories. Observing the Munk model, one can see that the numerical solution initially converges towards the theoretical one, and once the theoretical agreement is obtained the solution is steady. Almost the opposite is true for the Sverdrup solution. The agreement to the theoretical Sverdrup solution is okay after two days, but then becomes worse with time and does not reach a steady state. Furthermore, the mass build up creates a high that starts to propagate like a dispersive Rossby wave, which is very far from the theoretical solution. One can thus state that the steady state converging Munk solution is a big improvement from the Sverdrup solution. However, to make a fair compression between the two models, the Munk solution in \autoref{fig:munk_comparison}--\ref{fig:munk_cross_section} will also be time averaged, although this is not essential to yield realistic result.  
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[height=0.6\textwidth]{Figures/steamfuntion_munk_compare.png}
+    \caption{This figure shows the effect of the Munk friction, compared to the Sverdrup theory without friction. This is seen for different time-steps, to highlight the difference in steady state solutions. The Munk theory displays a proper convergence, whereas the Sverdrup does not converge to a steady state solution. The contours show the model result, while the solid red lines showcases the Munk and Sverdrup theory respectively.}
+    \label{fig:munk_streamfunction_compare}
+\end{figure}
+
+Plots of the Munk theory can be seen in \autoref{fig:munk_comparison}--\ref{fig:munk_cross_section}. In \autoref{fig:munk_comparison} one can see the effect of varying the drag coefficient $A$. Increasing the viscosity can be seen to do two major things: decreasing the speed of the western boundary current and moving the western boundary current further away from the western boundary. The decrease in speed for higher viscosity makes sense since there is more frictional "energy loss" in the system. The fact that the western boundary current is moved away from the boundary also makes sense since this increases the size of the Munk layer $\delta_M$.
+
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[height=0.3\textwidth]{Figures/munk_comparison.png}
+    \caption{Streamfunction fields for different values of the meridional viscosity coefficient $A$, compared to Munk theory. The contours show the model result, while the solid red lines showcases the theory. The resolution of the Munk depth is $\tfrac{\delta_M}{\Delta x}=[3.8, \ 4.9, \ 8.4]$, from left to right in the figure. One can observe a closer proximity of the theoretical result for the increasing $A$. The time-averaging was done between two days and two weeks.}
+    \label{fig:munk_comparison}
+\end{figure}
+
+The cross sectional streamfunction for varying viscosity wind can be seen in \autoref{fig:munk_cross_section}. There one can see similar results to what was presented above: a stronger western boundary current for smaller viscosity together with a closer proximity to the western boundary. One can also observe that the smaller viscosity yields larger streamfunction fluxes. This makes sense since less viscosity means less energy loss to the system. Compared to Sverdrup solution one can see a much better result, with good agreement between the theory and the numerical model. Especially good result can be seen in the meridional velocity, which is almost spot on. Slightly worse results can be observed for the larger viscosity coefficient. There one can see a slight difference between the theoretical streamfunction and the numerical one. 
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[height=0.5\textwidth]{Figures/munk_cross_section.png}
+    \caption{Zonal cross-sections of the streamfunction at the center of the domain for different values of the meridional viscosity coefficient $A$. Solid lines show the numerical model, while dashed lines represent Munk theory. Again the resolution of the Munk depth is $\tfrac{\delta_M}{\Delta x}=[3.3, \ 4.9, \ 8.4]$, from left to right in the figure. Good agreement with theory can be seen. The meridional wind velocity has been transformed into an Ekman-layer velocity, by assuming an Ekman depth of $\delta_\text{EK}=\SI{50}{\meter}$. The meridional velocity is thus the corresponding mass flux as if the domain is at rest and only the Ekman layer is moving.  The time-averaging was done between two days and two weeks.}
+    \label{fig:munk_cross_section}
+\end{figure}
