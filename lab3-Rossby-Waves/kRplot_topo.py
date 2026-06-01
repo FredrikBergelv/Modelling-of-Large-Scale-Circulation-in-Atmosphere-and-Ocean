@@ -73,12 +73,12 @@ def group(hy):
     x = hy.x.values
     t = 3600*hy.time.values
 
-    # ---- t=0: largest point ----
+    # ---- largest point, at t=0----
     h0 = hy.isel(time=0).values
     i_max0 = np.argmax(h0)
     x0 = x[i_max0]
 
-    # ---- find smallest value over ALL time ----
+    # ---- find smallest value ----
     hmin = hy.values.min()
 
     if hmin < -0.5:
@@ -114,17 +114,17 @@ def group_polyfit(hy):
 
     centers = []
 
-    # remove time mean (VERY important)
+    # remove time mean
     h_prime = hy - hy.mean(dim="time")
 
     for tt in hy.time:
 
         hslice = h_prime.sel(time=tt).values
 
-        # energy-like weight (variance contribution)
+        # energy weight 
         w = hslice**2
 
-        # avoid division errors
+        # avoid division by zero
         if np.sum(w) == 0:
             centers.append(np.nan)
             continue

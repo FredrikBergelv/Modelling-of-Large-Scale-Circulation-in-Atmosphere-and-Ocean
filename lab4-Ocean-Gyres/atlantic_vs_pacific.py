@@ -183,7 +183,7 @@ def plot_streamfunction_compare(
             y / 1000,
             psi,
             cmap="cmo.haline",
-            levels=8,
+            levels=7,
             vmin=vmin,
             vmax=vmax,
         )
@@ -270,7 +270,7 @@ def plot_streamfunction_compare(
     cbar = fig.colorbar(
         cf,
         ax=axes,
-        shrink=0.8
+        shrink=0.8,
     )
 
     cbar.set_label(

@@ -137,7 +137,7 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
     nrows = len(models)
     ncols = len(times)
 
-    fig = plt.figure(figsize=(4 * ncols, 3.5 * nrows + 3.5))
+    fig = plt.figure(figsize=(3.7 * ncols, 7))
 
     gs = GridSpec(
         nrows + 1, ncols,
@@ -295,9 +295,8 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
     plt.suptitle("Ocean Gyres Streamfunction", size=16)
     fig.set_constrained_layout(True)
 
-    save_name = "steamfuntion_munk_compare"
+    save_name = "sverdrup_vs_munk"
     plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
-    plt.savefig(f"ocean-gyres-report/Figures/{save_name}.png", dpi=300, bbox_inches="tight")
 
     if show:
         plt.show()
@@ -308,7 +307,7 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
 # =========================
 plot_2xN(
     models=["drag_intermediate", "no_drag_normal_u10"],
-    times=[2 * 24, 14 * 24, 30 * 24],
+    times=[2 * 24, 14 * 24, 50 * 24],
     labels=["Munk drag ON", "Munk drag OFF"],
     u10=10,
     show=False

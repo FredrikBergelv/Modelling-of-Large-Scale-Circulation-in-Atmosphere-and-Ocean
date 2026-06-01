@@ -332,7 +332,6 @@ def plot_merged(
     fig.set_constrained_layout(True)
 
     plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
-    plt.savefig(f"ocean-gyres-report/Figures/{save_name}.png", dpi=300, bbox_inches="tight")
 
     print(f"Saved as {save_name}")
 
@@ -351,7 +350,7 @@ plot_merged(
     ],
     values=[4, 5, 6],
     label=r"$U_{10}$",
-    save_name="u10_merged",
+    save_name="sverdrup_u10",
     u10=True,
     time_start=2 * 24
 )

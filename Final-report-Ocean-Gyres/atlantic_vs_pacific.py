@@ -225,7 +225,7 @@ def plot_domain_compare_merged(
         cf = ax_contour.contourf(
             x_plot, y_plot, psi,
             cmap="cmo.haline",
-            levels=7,
+            levels=8,
             vmin=vmin,
             vmax=vmax
         )
@@ -316,7 +316,6 @@ def plot_domain_compare_merged(
     fig.set_constrained_layout(True)
 
     plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
-    plt.savefig(f"ocean-gyres-report/Figures/{save_name}.png", dpi=300, bbox_inches="tight")
 
     print(f"Saved as {save_name}")
 
@@ -340,7 +339,7 @@ plot_domain_compare_merged(
     Nx_values=[200, 400],
     Lx_ref=7e6,
     u10_value=5,
-    save_name="domain_compare_merged",
+    save_name="atlantic_vs_pacific",
     time_start=2 * 24,
     show=False
 )

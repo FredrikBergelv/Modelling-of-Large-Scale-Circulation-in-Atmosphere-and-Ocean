@@ -133,7 +133,7 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
     # ======================================================
     fig, axes = plt.subplots(
         n, 3,
-        figsize=(4*3    , 3.5 * n),
+        figsize=(3.7*3    , 3.5 * n),
         sharex=False,
         sharey=False
         )
@@ -221,7 +221,7 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
     cbar = fig.colorbar(
         cf,
         ax=axes[0, :],
-        location="right",
+        location="left",
         shrink=0.85,
         pad=0.01
     )
@@ -234,10 +234,9 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
 
     fig.set_constrained_layout(True)
 
-    save_name = folder + "_streamfunction"
+    save_name = "f_plane"
 
     plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
-    plt.savefig(f"ocean-gyres-report/Figures/{save_name}.png", dpi=300, bbox_inches="tight")
 
     print(f"Saved as {save_name}")
 
