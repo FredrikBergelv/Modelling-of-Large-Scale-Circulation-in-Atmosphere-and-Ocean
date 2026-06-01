@@ -126,7 +126,7 @@ def plot_merged(
         3,
         n,
         figsize=(3.7 * n, 7),
-        sharex=True
+        sharex=False
     )
 
     model_profiles = []
@@ -203,10 +203,21 @@ def plot_merged(
         ax_contour = axes[0, i]
         ax_psi     = axes[1, i]
         ax_v       = axes[2, i]
-
+        
+        if i != 0:
+            ax_contour.tick_params(axis="y", labelleft=False)
+            ax_psi.tick_params(axis="y", labelleft=False)
+            ax_v.tick_params(axis="y", labelleft=False)
+        ax_contour.tick_params(axis="x", labelbottom=False)
+        ax_psi.tick_params(axis="x", labelbottom=False)
+        
+        
         x, y, psi = contour_data[i]
         x_plot = x / Lx
         y_plot = y / Ly
+        
+        ax_v.grid(alpha=0.3)
+        ax_psi.grid(alpha=0.3)
 
         # --------------------------------------------------
         # ROW 0: CONTOURF
@@ -229,8 +240,7 @@ def plot_merged(
                 x_plot,
                 y_plot,
                 psi_theo_2d,
-                colors="red",
-                linewidths=1
+                colors="red"
             )
 
             ax_contour.clabel(cs, inline=True, fontsize=8, fmt="%.1f")
@@ -245,8 +255,7 @@ def plot_merged(
                 x_plot,
                 y_plot,
                 psi_theo_2d,
-                colors="red",
-                linewidths=1
+                colors="red"
             )
 
             ax_contour.clabel(cs, inline=True, fontsize=8, fmt="%.1f")
@@ -269,13 +278,13 @@ def plot_merged(
         )
 
         if i == 0:
-            ax_contour.set_ylabel(r"Longitude, $y/Ly$ [-]", fontsize=11)
+            ax_contour.set_ylabel(r"Longitude, $y/L_y$ [-]", fontsize=11)
 
         # --------------------------------------------------
         # ROW 1: PSI CROSS-SECTION
         # --------------------------------------------------
-        ax_psi.plot(x_plot, model_profiles[i], linewidth=2, label="Model mean")
-        ax_psi.plot(x_plot, theory_profiles[i], "--", linewidth=2, color="black", label="Theory")
+        ax_psi.plot(x_plot, model_profiles[i],  label="Model mean")
+        ax_psi.plot(x_plot, theory_profiles[i], "--",  color="black", label="Theory")
         ax_psi.fill_between(
             x_plot,
             model_profiles[i] - model_stds[i],
@@ -284,14 +293,13 @@ def plot_merged(
             alpha=0.3,
             label="Model ±1 std"
         )
-        ax_psi.set_ylim(psi_min, psi_max)
-        ax_psi.grid(alpha=0.3)
+        ax_psi.set_ylim(psi_min, psi_max + np.max(model_stds))
 
         # --------------------------------------------------
         # ROW 2: V CROSS-SECTION
         # --------------------------------------------------
-        ax_v.plot(x_plot, model_v_profiles[i], linewidth=2, color="C1", label="Model mean")
-        ax_v.plot(x_plot, theory_v_profiles[i], "--", linewidth=2, color="black", label="Theory")
+        ax_v.plot(x_plot, model_v_profiles[i],  color="C1", label="Model mean")
+        ax_v.plot(x_plot, theory_v_profiles[i], "--",  color="black", label="Theory")
         ax_v.fill_between(
             x_plot,
             model_v_profiles[i] - model_v_stds[i],
@@ -300,9 +308,8 @@ def plot_merged(
             alpha=0.3,
             label="Model ±1 std"
         )
-        ax_v.set_ylim(v_min, v_max)
-        ax_v.grid(alpha=0.3)
-        ax_v.set_xlabel("Latitude, $x/Lx$ [-]")
+        ax_v.set_ylim(v_min, v_max+np.max(model_v_stds))
+        ax_v.set_xlabel("Latitude, $x/L_x$ [-]")
 
     # ======================================================
     # SHARED Y-LABELS

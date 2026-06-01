@@ -137,12 +137,12 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
     nrows = len(models)
     ncols = len(times)
 
-    fig = plt.figure(figsize=(3.7 * ncols, 7))
+    fig = plt.figure(figsize=(3.7 * ncols, 7/3 * nrows + 3))
 
     gs = GridSpec(
         nrows + 1, ncols,
         figure=fig,
-        height_ratios=[3.5] * nrows + [3.5]
+        height_ratios=[7/3] * nrows + [3.]
     )
 
     axes = np.array([
@@ -151,6 +151,7 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
     ])
 
     ax_conv = fig.add_subplot(gs[nrows, :])
+
 
     data_store = []
     cf_rows = [None] * nrows
@@ -178,7 +179,12 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
         data_store.append((model, h_ds, v_ds, x, y, psi_row, time_row))
 
         for j, ax in enumerate(axes[model_idx]):
-
+            
+            if j!=0:
+                ax.tick_params(axis="y", labelleft=False)
+            else:
+                ax.set_ylabel("Longitude, $y/L_y$ [-]")
+        
             psi = psi_row[j]
 
             x_plot = x / Lx
@@ -214,12 +220,14 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
                 cs = ax.contour(x_plot, y_plot, psi_theo/1e6, colors="red")
                 ax.clabel(cs, inline=True, fontsize=8, fmt="%.1f")
                 text = labels[model_idx]
+                ax.tick_params(axis="x", labelbottom=False)
 
             else:
                 psi_theo = sverdrup(x, y, u10, Lx)
                 cs = ax.contour(x_plot, y_plot, psi_theo/1e6, colors="red")
                 ax.clabel(cs, inline=True, fontsize=8, fmt="%.1f")
                 text = labels[model_idx]
+                ax.set_xlabel("Latitude, $x/L_x$ [-]")
 
             ax.text(
                 0.98, 0.97,
@@ -283,8 +291,8 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
             errors_inst.append(relative_error_1d(num_inst, theo))
             t_axis.append(t_upper / 24)
 
-        ax_conv.plot(t_axis, errors_mean, color=colors[i], lw=2, label=f"{labels[i]} mean")
-        ax_conv.plot(t_axis, errors_inst, color=colors[i], ls="--", lw=1.5, label=f"{labels[i]} inst")
+        ax_conv.plot(t_axis, errors_mean, color=colors[i], label=f"{labels[i]} mean")
+        ax_conv.plot(t_axis, errors_inst, color=colors[i], ls="--", label=f"{labels[i]} inst")
 
     ax_conv.set_xlabel("Time [days]")
     ax_conv.set_ylabel("relative error [-]")

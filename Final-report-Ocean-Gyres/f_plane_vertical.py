@@ -132,14 +132,14 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
     # FIGURE: 3 rows x n columns
     # ======================================================
     fig, axes = plt.subplots(
-        n, 3,
-        figsize=(3.7*3    , 7/3 * n),
-        sharex=False,
-        sharey=False
-        )
+    3, n,
+    figsize=(4.7 * n, 7),
+    sharex=True,
+    sharey=False
+    )
 
     if n == 1:
-        axes = axes.reshape(1, 3)
+        axes = axes.reshape(3, 1)
 
     # ======================================================
     # PLOTTING
@@ -156,9 +156,9 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
         days  = actual_time // 24
         hours = actual_time % 24
 
-        ax_contour = axes[i, 0]
-        ax_psi     = axes[i, 1]
-        ax_v       = axes[i, 2]
+        ax_contour = axes[0, i]
+        ax_psi     = axes[1, i]
+        ax_v       = axes[2, i]
 
         # --------------------------------------------------
         # ROW 0: CONTOURF
@@ -187,8 +187,7 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
 
         #ax_contour.set_title(f"t={days:.0f}d {hours:.0f}h", fontsize=13)
 
-        if i == 0:
-            ax_contour.set_ylabel(r"Longitude, $y/L_y$ [-]", fontsize=11)
+        ax_contour.set_ylabel(r"Longitude, $y/L_y$ [-]", fontsize=11)
 
         # --------------------------------------------------
         # ROW 1: PSI CROSS-SECTION at y=0
@@ -197,8 +196,7 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
         ax_psi.set_ylim(psi_min, psi_max)
         ax_psi.grid(alpha=0.3)
 
-        if i == 0:
-            ax_psi.set_ylabel(r"Streamfunction, $\Psi$ [Sv]", fontsize=11)
+        ax_psi.set_ylabel(r"Streamfunction, $\Psi$ [Sv]", fontsize=11)
 
         # --------------------------------------------------
         # ROW 2: V CROSS-SECTION at y=0
@@ -208,12 +206,10 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
         ax_v.grid(alpha=0.3)
         
         ax_v.set_xlabel(r"Latitude, $x/L_x$ [-]", fontsize=11)
-        ax_psi.set_xlabel(r"Latitude, $x/L_x$ [-]", fontsize=11)
-        ax_contour.set_xlabel(r"Latitude, $x/L_x$ [-]", fontsize=11)
+   
 
 
-        if i == 0:
-            ax_v.set_ylabel(r"Meridional velocity, $v$ [m/s]", fontsize=11)
+        ax_v.set_ylabel(r"Meridional velocity, $v$ [m/s]", fontsize=11)
 
     # ======================================================
     # COLORBAR FOR ROW 0
@@ -221,7 +217,7 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
     cbar = fig.colorbar(
         cf,
         ax=axes[0, :],
-        location="left",
+        location="right",
         shrink=0.85,
         pad=0.01
     )
@@ -232,7 +228,7 @@ def plot_streamfunction(folder, times, show=False, u10=False, A=False, Lx=Lx):
 
     fig.set_constrained_layout(True)
 
-    save_name = "f_plane"
+    save_name = "f_plane_vertical"
 
     plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
 
