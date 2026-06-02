@@ -4,20 +4,44 @@
 
 \input{Other/Information}
 
+\ifthenelse{\equal{\draftmode}{y}}{
+\usepackage{environ} 
+\RenewEnviron{figure}[1][]{}
+}{}
+
 \begin{document}
 
 \input{Other/Title}
 
+\ifthenelse{\equal{\draftmode}{y}}{
+\makeatletter
+\renewcommand{\section}[1]{
+  \refstepcounter{section}
+  \addcontentsline{toc}{section}{\thesection\quad #1}
+  \par\bigskip
+  \textbf{#1}\par\medskip}
+\renewcommand{\subsection}[1]{%
+  \refstepcounter{subsection}
+  \addcontentsline{toc}{subsection}{\thesubsection\quad #1}
+  \par\smallskip
+  \textbf{#1}\par\smallskip}
+\makeatother
+\renewcommand{\newpage}{}
+}{}
+
+\ifthenelse{\equal{\draftmode}{n}}{
 \ifthenelse{\equal{\IncludeTab}{y}}{
 \tableofcontents
-\newpage}{}
+\newpage}{}}{}
 
-\include{Textfiles/Questions}
-\input{Textfiles/Part1}
-\input{Textfiles/Part2}
-\input{Textfiles/Part3}
-\input{Textfiles/Part4}
+\input{Textfiles/0.Abstract.tex}
+\input{Textfiles/1.Background.tex}
+\input{Textfiles/2.Methodology.tex}
+\input{Textfiles/3.Results.tex}
+\input{Textfiles/4.Discussion.tex}
+\input{Textfiles/5.Conclusion.tex}
 
+\newpage
 \ifthenelse{\equal{\IncludeBib}{y}}{\bibliography{Textfiles/References.bib}}{}
 
 \input{Textfiles/Appendix}

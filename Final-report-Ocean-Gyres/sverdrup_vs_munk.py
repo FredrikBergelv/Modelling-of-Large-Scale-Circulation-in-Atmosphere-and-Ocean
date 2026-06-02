@@ -15,7 +15,7 @@ rho = 1027
 f0 = 7.27e-5
 beta = 1.98e-11
 
-time_start = 1 * 24
+time_start = 4 * 24
 
 
 # =========================
@@ -49,7 +49,7 @@ def sverdrup(x, y, u10, Lx=Lx):
 
 def munk(x, y, A, Lx):
 
-    psi_s = sverdrup(x, y, u10=10, Lx=Lx)
+    psi_s = sverdrup(x, y, u10=5, Lx=Lx)
 
     dm = (A / beta) ** (1 / 3)
 
@@ -152,14 +152,14 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
 
     ax_conv = fig.add_subplot(gs[nrows, :])
 
-
     data_store = []
-    cf_rows = [None] * nrows
 
     # =========================
-    # LOAD DATA + PLOT
+    # FIRST PASS — load all psi to get shared color limits
     # =========================
-    for model_idx, model in enumerate(models):
+    all_psi_vals = []
+
+    for model in models:
 
         h_ds = xr.open_dataset(f"data/{model}/h.nc")
         v_ds = xr.open_dataset(f"data/{model}/v.nc")
@@ -175,90 +175,92 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
             psi = psi / 1e6
             psi_row.append(psi)
             time_row.append(actual_time)
+            all_psi_vals.append(psi.ravel())
 
         data_store.append((model, h_ds, v_ds, x, y, psi_row, time_row))
 
+    vmin = np.min(np.concatenate(all_psi_vals))
+    vmax = np.max(np.concatenate(all_psi_vals))
+    
+    c_levels = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    vmin = min(c_levels)
+    vmax = max(c_levels)
+
+    # =========================
+    # SECOND PASS — plot
+    # =========================
+    cf_last = None
+
+    for model_idx, (model, h_ds, v_ds, x, y, psi_row, time_row) in enumerate(data_store):
+
         for j, ax in enumerate(axes[model_idx]):
-            
-            if j!=0:
+
+            if j != 0:
                 ax.tick_params(axis="y", labelleft=False)
             else:
                 ax.set_ylabel("Longitude, $y/L_y$ [-]")
-        
+
             psi = psi_row[j]
 
             x_plot = x / Lx
             y_plot = y / Ly
 
-            # =========================
-            # FIX: ROW-SPECIFIC SCALING
-            # =========================
-            if model_idx == 1:
-                cf = ax.contourf(
-                    x_plot, y_plot, psi,
-                    levels=8,
-                    cmap="cmo.haline",
-                    vmin=-1, vmax=8   # <-- FORCED BOTTOM ROW SCALE
-                )
-            else:
-                cf = ax.contourf(
-                    x_plot, y_plot, psi,
-                    levels=8,
-                    cmap="cmo.haline",
-                    vmin=0, vmax=24
-                )
-                actual_time = time_row[j]
-                days  = actual_time // 24
-                hours = actual_time % 24
+            cf = ax.contourf(
+                x_plot, y_plot, psi,
+                levels=c_levels,
+                cmap="cmo.haline",
+                vmin=vmin,
+                vmax=vmax,
+                extend="both"
+            )
+
+            cf_last = cf
+
+            actual_time = time_row[j]
+            days  = actual_time // 24
+            hours = actual_time % 24
+
+            if model_idx == 0:
                 ax.set_title(f"t={days:.0f}d {hours:.0f}h", fontsize=13)
 
-            if j == 0:
-                cf_rows[model_idx] = cf
-
-            if labels[model_idx] == "Munk drag ON":
+            if labels[model_idx] == "Munk viscosity ON":
                 psi_theo = munk(x, y, 1e5, Lx)
-                cs = ax.contour(x_plot, y_plot, psi_theo/1e6, colors="red")
-                ax.clabel(cs, inline=True, fontsize=8, fmt="%.1f")
-                text = labels[model_idx]
+                cs = ax.contour(x_plot, y_plot, psi_theo/1e6, colors="red", levels=c_levels)
+                ax.clabel(cs, inline=True, fontsize=8, fmt="%.0f")
                 ax.tick_params(axis="x", labelbottom=False)
 
             else:
                 psi_theo = sverdrup(x, y, u10, Lx)
-                cs = ax.contour(x_plot, y_plot, psi_theo/1e6, colors="red")
-                ax.clabel(cs, inline=True, fontsize=8, fmt="%.1f")
-                text = labels[model_idx]
+                cs = ax.contour(x_plot, y_plot, psi_theo/1e6, colors="red", levels=c_levels)
+                ax.clabel(cs, inline=True, fontsize=8, fmt="%.0f")
                 ax.set_xlabel("Latitude, $x/L_x$ [-]")
 
             ax.text(
                 0.98, 0.97,
-                text,
+                labels[model_idx],
                 transform=ax.transAxes,
-                ha="right",
-                va="top",
-                fontsize=10,
+                ha="right", va="top", fontsize=10,
                 bbox=dict(facecolor="white", alpha=0.8, edgecolor="none")
             )
-            
-            
 
     # =========================
-    # TWO COLORBARS (ONE PER ROW)
+    # SINGLE SHARED COLORBAR
     # =========================
-    for i in range(nrows):
-        cbar = fig.colorbar(
-            cf_rows[i],
-            ax=axes[i, :],
-            shrink=0.8,
-            pad=0.02
-        )
-        cbar.set_label(r"Streamfunction [Sv]")
+    cbar = fig.colorbar(
+        cf_last,
+        ax=axes[:, :],
+        shrink=0.6,
+        pad=0.02,
+        ticks=c_levels
+    )
+    cbar.set_label(r"Streamfunction [Sv]")
 
     # =========================
-    # CONVERGENCE (UNCHANGED)
+    # CONVERGENCE
     # =========================
     ref_h_ds = xr.open_dataset(f"data/{data_store[0][0]}/h.nc")
     all_times = ref_h_ds["time"].values
-    t_uppers = all_times[all_times > time_start]
+    t_uppers  = all_times[all_times > time_start]
 
     colors = ["C0", "C1", "C2", "C3"]
 
@@ -266,7 +268,7 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
 
         errors_mean = []
         errors_inst = []
-        t_axis = []
+        t_axis      = []
 
         for t_upper in t_uppers:
 
@@ -276,7 +278,7 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
 
             psi_inst, _, _ = compute_psi_instant(v_ds, h_ds, t_upper)
 
-            if labels[i] == "Munk drag ON":
+            if labels[i] == "Munk viscosity ON":
                 psi_theo = munk(x_num, y_num, 1e5, Lx) / 1e6
             else:
                 psi_theo = sverdrup(x_num, y_num, u10, Lx) / 1e6
@@ -285,19 +287,21 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
 
             num_mean = psi_mean[y_idx, :]
             num_inst = psi_inst[y_idx, :]
-            theo = psi_theo[y_idx, :]
+            theo     = psi_theo[y_idx, :]
 
             errors_mean.append(relative_error_1d(num_mean, theo))
             errors_inst.append(relative_error_1d(num_inst, theo))
             t_axis.append(t_upper / 24)
 
-        ax_conv.plot(t_axis, errors_mean, color=colors[i], label=f"{labels[i]} mean")
-        ax_conv.plot(t_axis, errors_inst, color=colors[i], ls="--", label=f"{labels[i]} inst")
+        ax_conv.plot(t_axis, errors_mean, color=colors[i], linewidth=2,
+                     label=f"{labels[i]} mean")
+        ax_conv.plot(t_axis, errors_inst, color=colors[i], linewidth=1.5,
+                     linestyle="--", alpha=0.6, label=f"{labels[i]} inst")
 
     ax_conv.set_xlabel("Time [days]")
-    ax_conv.set_ylabel("relative error [-]")
+    ax_conv.set_ylabel("Relative error [-]")
     ax_conv.set_title("Convergence of Model to Theory", fontsize=14)
-    ax_conv.legend()
+    ax_conv.legend(loc="upper right")
     ax_conv.grid(alpha=0.3)
 
     plt.suptitle("Ocean Gyres Streamfunction", size=16)
@@ -305,7 +309,8 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
 
     save_name = "sverdrup_vs_munk"
     plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
-
+    print(f"Saved plot as plots/{save_name}.png")
+    
     if show:
         plt.show()
 
@@ -314,9 +319,9 @@ def plot_2xN(models, times, labels, u10=None, A=None, Lx=Lx, show=False):
 # RUN
 # =========================
 plot_2xN(
-    models=["drag_intermediate", "no_drag_normal_u10"],
-    times=[2 * 24, 14 * 24, 50 * 24],
-    labels=["Munk drag ON", "Munk drag OFF"],
-    u10=10,
+    models=["drag_intermediate", "no_drag_comparisson"],
+    times=[2 * 24, 14 * 24, 60 * 24],
+    labels=["Munk viscosity ON", "Munk viscosity OFF"],
+    u10=5,
     show=False
 )

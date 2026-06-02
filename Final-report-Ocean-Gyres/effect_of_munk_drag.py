@@ -11,7 +11,6 @@ Lx = Ly = 7e6
 Nx = Ny = 200
 dx = dy = Lx / Nx
 
-
 rho = 1027
 f0 = 7.27e-5
 beta = 1.98e-11
@@ -39,14 +38,11 @@ def sverdrup(x, y, u10):
     psi = np.zeros((len(y), len(x)))
 
     for j in range(len(y)):
-
         integral = 0.0
 
         for i in reversed(range(len(x))):
-
             if i < len(x) - 1:
                 integral += v_s[j] * dx_here
-
             psi[j, i] = integral
 
     return -psi / 1e6
@@ -76,29 +72,47 @@ def munk(x, y, A, u10=5):
 # ==========================================================
 # MODEL STREAMFUNCTION
 # ==========================================================
-def compute_streamfunction_average(folder, time_start):
+def compute_streamfunction(folder, time_start):
 
     h_ds = xr.open_dataset(f"data/{folder}/h.nc")
     v_ds = xr.open_dataset(f"data/{folder}/v.nc")
 
-    v = v_ds["v"].sel(time=slice(time_start, None))
+    v = v_ds["v"].where(
+        v_ds["time"] >= time_start,
+        drop=True
+    )
 
     x = h_ds["x"].values
     y = h_ds["y"].values
 
+    dx = x[1] - x[0]
+
+    # --------------------------------------------------
+    # TIME SERIES STREAMFUNCTION (before averaging)
+    # --------------------------------------------------
     psi_all = -np.cumsum(
         (v.values * D * dx)[:, :, ::-1],
         axis=2
-    )[:, :, ::-1]
+    )[:, :, ::-1]   # shape: (time, y, x)
 
+    # --------------------------------------------------
+    # STATISTICS
+    # --------------------------------------------------
     psi_mean = np.mean(psi_all, axis=0)
-    psi_std = np.std(psi_all, axis=0)
-    v_mean = np.mean(v.values, axis=0)
-    v_std = np.std(v.values, axis=0)
-    
-    print("Svedrup: max v = ", np.max(v_mean))
+    psi_std  = np.std(psi_all, axis=0)
 
-    return x, y, psi_mean[:-1] / 1e6, v_mean, psi_std / 1e6, v_std
+    v_mean = np.mean(v.values, axis=0)
+    v_std  = np.std(v.values, axis=0)
+
+    # --------------------------------------------------
+    # GRID FIX
+    # --------------------------------------------------
+    if psi_mean.shape[0] != len(y):
+        y_plot = np.linspace(y[0], y[-1], psi_mean.shape[0])
+    else:
+        y_plot = y
+
+    return x, y_plot, psi_mean / 1e6, psi_std / 1e6, v_mean, v_std
 
 
 # ==========================================================
@@ -117,7 +131,7 @@ def plot_merged(
     values,
     label,
     save_name,
-    time_start=2*24,
+    time_start=24*2,
     u10=False,
     A=False,
     show=False
@@ -133,7 +147,7 @@ def plot_merged(
     )
 
     model_profiles = []
-    model_stds= []
+    model_stds = []
     theory_profiles = []
     model_v_profiles = []
     model_v_stds = []
@@ -147,11 +161,10 @@ def plot_merged(
     # ======================================================
     for i, folder in enumerate(folders):
 
-        x, y, psi, v, psi_std, v_std = compute_streamfunction_average(
-            folder,
-            time_start
-        )
+        x, y, psi, psi_std, v, v_std = compute_streamfunction(folder, time_start)
 
+        x_global = x
+        y_global = y
 
         # Contourf data
         contour_data.append((x, y, psi))
@@ -159,7 +172,6 @@ def plot_merged(
         # Cross-section profiles
         model_profile = extract_centerline(x, y, psi)
         model_profiles.append(model_profile)
-        
         model_profile_std = extract_centerline(x, y, psi_std)
         model_stds.append(model_profile_std)
 
@@ -188,6 +200,8 @@ def plot_merged(
     # ======================================================
     vmin = np.min([d[2].min() for d in contour_data])
     vmax = np.max([d[2].max() for d in contour_data])
+    vmin = 0
+    vmax = 7
 
     # ======================================================
     # CROSS-SECTION LIMITS (rows 1 & 2)
@@ -207,28 +221,26 @@ def plot_merged(
         ax_psi     = axes[1, i]
         ax_v       = axes[2, i]
         
+        ax_contour = axes[0, i]
+        ax_psi     = axes[1, i]
+        ax_v       = axes[2, i]
+        
         if i != 0:
             ax_contour.tick_params(axis="y", labelleft=False)
             ax_psi.tick_params(axis="y", labelleft=False)
             ax_v.tick_params(axis="y", labelleft=False)
         ax_contour.tick_params(axis="x", labelbottom=False)
         ax_psi.tick_params(axis="x", labelbottom=False)
-        
-        
+
         x, y, psi = contour_data[i]
         x_plot = x / Lx
         y_plot = y / Ly
-        
-        ax_v.grid(alpha=0.3)
-        ax_psi.grid(alpha=0.3)
 
         # --------------------------------------------------
         # ROW 0: CONTOURF
         # --------------------------------------------------
-        c_levels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10, 11]
-        vmin = min(c_levels)
-        vmax = max(c_levels)
-        
+        c_levels = [0, 1, 2, 3, 4, 5, 6, 7,8]
+
         cf = ax_contour.contourf(
             x_plot,
             y_plot,
@@ -239,31 +251,15 @@ def plot_merged(
             vmax=vmax
         )
 
-        if u10:
-
-            psi_theo_2d = sverdrup(x, y, u10=values[i])
-
-            cs = ax_contour.contour(
-                x_plot,
-                y_plot,
-                psi_theo_2d,
-                levels=c_levels,
-                colors="red"
-            )
-
-            ax_contour.clabel(cs, inline=True, fontsize=8, fmt="%.0f")
-
-            text = f"{label} = {values[i]} m/s"
+        text = ""
 
         if A:
-
-            psi_theo_2d = munk(x, y, A=values[i])
+            psi_theo = munk(x, y, A=values[i])
 
             cs = ax_contour.contour(
                 x_plot,
                 y_plot,
-                psi_theo_2d,
-                levels=c_levels,
+                psi_theo,
                 colors="red"
             )
 
@@ -271,10 +267,7 @@ def plot_merged(
 
             text = f"{label} = {values[i]:.0e} m²/s"
 
-        ax_contour.set_title(
-            folders[i].replace("_", " ").title(),
-            fontsize=13
-        )
+        ax_contour.set_title(folders[i].replace("_", " ").title(), fontsize=13)
 
         ax_contour.text(
             0.98, 0.97,
@@ -292,32 +285,33 @@ def plot_merged(
         # --------------------------------------------------
         # ROW 1: PSI CROSS-SECTION
         # --------------------------------------------------
-        ax_psi.plot(x_plot, model_profiles[i],  label="Model mean")
-        ax_psi.plot(x_plot, theory_profiles[i], "--",  color="black", label="Theory")
+        ax_psi.plot(x_plot, model_profiles[i], label="Model mean")
+        ax_psi.plot(x_plot, theory_profiles[i], "--", color="black", label="Theory")
         ax_psi.fill_between(
             x_plot,
             model_profiles[i] - model_stds[i],
             model_profiles[i] + model_stds[i],
-            color="C0",
-            alpha=0.3,
-            label="Model ±1 std"
+            color="C0", alpha=0.3, label="Model ±1 std"
         )
-        ax_psi.set_ylim(psi_min, psi_max + np.max(model_stds))
+        ax_psi.set_ylim(psi_min, psi_max+np.max(model_stds))
+        ax_psi.grid(alpha=0.3)
+
 
         # --------------------------------------------------
         # ROW 2: V CROSS-SECTION
         # --------------------------------------------------
-        ax_v.plot(x_plot, model_v_profiles[i],  color="C1", label="Model mean")
-        ax_v.plot(x_plot, theory_v_profiles[i], "--",  color="black", label="Theory")
+        ax_v.plot(x_plot, model_v_profiles[i], color="C1", label="Model mean")
+        ax_v.plot(x_plot, theory_v_profiles[i], "--", color="black", label="Theory")
         ax_v.fill_between(
             x_plot,
             model_v_profiles[i] - model_v_stds[i],
             model_v_profiles[i] + model_v_stds[i],
-            color="C1",
-            alpha=0.3,
-            label="Model ±1 std"
+            color="C1", alpha=0.3, label="Model ±1 std"
         )
+        delta_M = (values[i] / beta) ** (1/3)
+        ax_v.axvline(delta_M/Lx, color="C3", linestyle=":", label=r"$x=\delta_M$")
         ax_v.set_ylim(v_min, v_max+np.max(model_v_stds))
+        ax_v.grid(alpha=0.3)
         ax_v.set_xlabel("Latitude, $x/L_x$ [-]")
 
     # ======================================================
@@ -360,14 +354,10 @@ def plot_merged(
 # RUN
 # ==========================================================
 plot_merged(
-    folders=[
-        "no_drag_low_u10",
-        "no_drag_intermediate_u10",
-        "no_drag_high_u10"
-    ],
-    values=[4, 5, 6],
-    label=r"$U_{10}$",
-    save_name="sverdrup_u10",
-    u10=True,
-    time_start=2 * 24
+    folders=["drag_low", "drag_intermediate", "drag_high"],
+    values=[30e3, 100e3, 500e3],
+    label="A",
+    save_name="munk_a",
+    A=True,
+    time_start=24 * 2
 )

@@ -1,7 +1,27 @@
-\begin{frame}{Discussion, Sverdrup versus Munk}
+\begin{frame}{Discussion}
   \section{Discussion}
-  
+ 
+Both models show western boundary currents due to mass conservation, but only Munk theory shows a western boundary current. Why?:
 
+
+
+\begin{columns}[T] 
+    \begin{column}{0.6\textwidth}
+
+    \begin{itemize}
+        \item The Sverdrup theory is linear, only one B.C. $\Psi\left(x_\text{East}\right)=0$.
+        \item The Munk theory is non-linear, four B.C.s: $\Psi\left(x_\text{East}\right)=\Psi\left(x_\text{West}\right)=v\left(x_\text{East}\right)=v\left(x_\text{West}\right)=0$.
+        \item Frictional force is opposite sign to the motion itself, needed to balance Sverdrup flow. 
+        \item The Munk viscosity creates a boundary layer where the frictional force can take care of mass conservation.
+    \end{itemize}
+
+    \end{column}
+    \begin{column}{0.4\textwidth} 
+        \vspace{1cm}
+      \begin{empheq}{equation*}
+            A\nabla^4 \Psi -\beta \frac{\partial \Psi}{\partial x} = \frac{1}{\rho}\nabla\times\vec{\tau}
+       \end{empheq} 
+    \end{column}
+  \end{columns}
 
 \end{frame}
-

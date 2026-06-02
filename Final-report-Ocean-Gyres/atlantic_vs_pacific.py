@@ -98,6 +98,7 @@ def compute_streamfunction(folder, time_start):
     else:
         y_plot = y
 
+    print("Atlantic vs. Pacific: max v = ", np.max(v_mean))
     return x, y_plot, psi_mean / 1e6, psi_std / 1e6, v_mean, v_std
 
 
@@ -195,6 +196,11 @@ def plot_domain_compare_merged(
     vmin = np.min([d[2].min() for d in contour_data])
     vmax = np.max([d[2].max() for d in contour_data])
 
+    
+    c_levels = [0, 2, 4, 6, 8, 10, 12, 14, 16]
+    vmin=min(c_levels)
+    vmax=max(c_levels)
+
     # ======================================================
     # CROSS-SECTION LIMITS (rows 1 & 2)
     # ======================================================
@@ -236,9 +242,9 @@ def plot_domain_compare_merged(
         cf = ax_contour.contourf(
             x_plot, y_plot, psi,
             cmap="cmo.haline",
-            levels=8,
+            levels=c_levels,
             vmin=vmin,
-            vmax=vmax
+            vmax=vmax,
         )
 
         psi_theo_2d = sverdrup(
@@ -250,10 +256,11 @@ def plot_domain_compare_merged(
 
         cs = ax_contour.contour(
             x_plot, y_plot, psi_theo_2d,
+            c_levels,
             colors="red"
         )
 
-        ax_contour.clabel(cs, inline=True, fontsize=8, fmt="%.1f")
+        ax_contour.clabel(cs, inline=True, fontsize=8, fmt="%.0f")
 
         ax_contour.set_title(labels[i], fontsize=13)
 
@@ -299,6 +306,8 @@ def plot_domain_compare_merged(
         ax_v.set_ylim(v_min, 9)
         ax_v.grid(alpha=0.3)
         ax_v.set_xlabel(r"Latitude, $x/L_{x_{ref}}$ [-]")
+        if i == 1:
+            ax_v.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0])
 
     # ======================================================
     # SHARED Y-LABELS
@@ -313,7 +322,8 @@ def plot_domain_compare_merged(
         cf,
         ax=axes[0, :],
         shrink=0.8,
-        pad=0.01
+        pad=0.01,
+        ticks=c_levels
     )
     cbar.set_label(r"Streamfunction, $\Psi$ [Sv]", fontsize=11)
 

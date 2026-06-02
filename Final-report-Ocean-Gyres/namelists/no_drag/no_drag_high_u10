@@ -6,8 +6,8 @@ Ny = 200                 ! Number of y T points
 Lx = 7.E6                ! Width of domain in x [m]  1.e6 = 1000 km
 Ly = 7.E6                ! Width of domain in y [m]  1.e6 = 1000 km
 !!
-Tm_d = 30.                       ! Length of the run in days
-rfsave = 12.                       ! Timestep at which to save fields in hours.
+Tm_d = 80.                       ! Length of the run in days
+rfsave = 24.                       ! Timestep at which to save fields in hours.
 data_name = 'data/no_drag_high_u10'          ! Name of folder to save
 /
 

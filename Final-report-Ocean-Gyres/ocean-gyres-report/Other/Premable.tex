@@ -4,6 +4,7 @@
 \usepackage{amsmath,amssymb,amsfonts,amsthm}  
 \usepackage{empheq}
 \usepackage{hyperref} 
+\usepackage{cancel}
 \hypersetup{
     colorlinks, 
     citecolor=black,
@@ -35,7 +36,6 @@
 \usepackage{tcolorbox}
 \usepackage[ddmmyyyy]{datetime}
 \usepackage[english]{babel} 
-\usepackage{cancel}
 
 \newdateformat{usvardate}{\monthname[\THEMONTH] \THEDAY, \THEYEAR}
 
@@ -84,7 +84,7 @@
 \DeclareSIUnit\atomicmassunit{u}
 
 \newenvironment{question}
-  {\begin{tcolorbox}[colframe=white!50!black, colback=white!10!white, title=Questions] }
+  {\begin{tcolorbox}[colframe=white!50!black, colback=white!10!white, title=Question] }
   {\end{tcolorbox}}           
 
 \newenvironment{answer}

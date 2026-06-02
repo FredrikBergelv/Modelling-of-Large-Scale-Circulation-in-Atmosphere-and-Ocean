@@ -1,7 +1,28 @@
 \begin{frame}{Method}
   \section{Method}
 
-  Your content here.
+  Stress set as: 
+  \begin{equation}
+    \tau=\rho_\text{air}C_DU_{10}^2\,\sin\left(\frac{\pi y}{L_y}\right).
+  \end{equation}
+
+  The Sverdrup model:
+  \begin{itemize}
+      \item For the Atlantic Ocean: $L_x=L_y = \SI{7000}{\kilo\meter}$
+      \item For the Pacific Ocean: $L_x = \SI{14000}{\kilo\meter}$ and $L_y = \SI{7000}{\kilo\meter}$.
+      \item $\Delta x=\Delta y = \SI{35}{\kilo\meter}$
+      \item $U_{10} = [\SI{4}{\meter\per\second},\, \SI{5}{\meter\per\second},\, \SI{6}{\meter\per\second}]$
+  \end{itemize}
+
+\vspace{1cm}
+
+  The Munk model:
+  \begin{itemize}
+      \item $L_x$, $L_y $, $\Delta x$ ad $\Delta y$ same as before. 
+      \item $U_{10} = \SI{5}{\meter\per\second}$
+      \item $A = [\SI{3e4}{\meter\squared\per\second},\, \SI{1e5}{\meter\squared\per\second},\, \SI{5e5}{\meter\squared\per\second}]$.
+      \item $\implies \frac{\delta_M}{\Delta x} \approx [\SI{3.3}{},\, \SI{4.9}{},\, \SI{8.4}{}]$
+  \end{itemize}
 \end{frame}
 
 

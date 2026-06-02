@@ -1,0 +1,56 @@
+\section{Results}
+\subsection{Sverdrup circulation}
+The Sverdrup solution gave \autoref{fig:f_plane}--\ref{fig:atlantic_vs_pacific}. One can in \autoref{fig:f_plane} see the result of the $f$-plane, which does not resemble the beta Sverdrup theory. Here the solution is symmetric, since there is no latitudinal asymmetry caused by the $\beta$-term. This is a geostrophic solution to the applied wind stress, and thus symmetric in the domain. However, an gyre can still be seen due to the consequence of the $y$-dependence on the wind stress. 
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[height=0.6\textwidth]{../../plots/f_plane_vertical.png}
+    \caption{Streamfunction for the no-viscosity $f$-plane configuration. The circulation remains symmetric with no $\beta$-effect and without western intensification.}
+    \label{fig:f_plane}
+\end{figure}
+
+The introduction of the $\beta$-term gave \autoref{fig:sverdrup_u10}. One can observe Sverdrup like solution compared to \autoref{fig:f_plane}, due to the asymmetric beta effect (stronger $f$ northward and weaker southward) pushing the solution towards the western boundary. The mirror-symmetry is thus broken and a better Sverdrup solution is obtained. 
+
+Varying the wind stress gave \autoref{fig:sverdrup_u10}. There one can see that a stronger wind linearly increases the flux in the domain. This is reasonable since the wind stress is the forcing that drives this circulation. Thus, more forcing yields larger fluxes. Examining the slope, one sees larger southward fluxes in the interior. Overall, one can see okay agreement for the time-averaged result and the theory. Away from the western boundary the model and the theory align very good, but close to the western boundary they are very bad. 
+
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[height=0.6\textwidth]{../../plots/sverdrup_u10.png}
+    \caption{Comparison of streamfunction fields for different ten meter wind speeds. Increasing wind speeds shows that it increases the magnitude of the wind-driven ocean gyre. The contours show the model result, while the solid red lines showcase the Sverdrup theory. The cross-sections of the streamfunction is at the center of the domain. The meridional wind velocity has been transformed into an Ekman-layer velocity, by assuming an Ekman depth of $\delta_\text{EK}=\SI{50}{\meter}$. The meridional velocity is thus the corresponding mass flux as if the domain is at rest and only the Ekman layer is moving. The time averaging was done between two days and two weeks for the model.}
+    \label{fig:sverdrup_u10}
+\end{figure}
+
+In \autoref{fig:atlantic_vs_pacific} one can observe the effect if one increases the domain width, while keeping $\Delta x$ constant. One can observe that a larger flux for the North Pacific compared to the North Atlantic, although the meridional velocity is exactly the same in the two oceans (as seen from the slope of the streamfunction). However, the error remains the same. 
+
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[height=0.6\textwidth]{../../plots/atlantic_vs_pacific.png}
+    \caption{Streamfunction for the no-viscosity $\beta$-plane configuration with varying domain size. The contours show the model result, while the solid red lines showcase the Sverdrup theory. In the center domain cross-section, solid lines show the numerical model results, while dashed lines show Sverdrup theory. The meridional wind velocity has been transformed into an Ekman-layer velocity, by assuming an Ekman depth of $\delta_\text{EK}=\SI{50}{\meter}$. The meridional velocity is thus the corresponding mass flux as if the domain is at rest and only the Ekman layer is moving. The time averaging was done between two days and two weeks for the model.}
+    \label{fig:atlantic_vs_pacific}
+\end{figure}
+
+
+\subsection{Munk's theory}
+
+The difference of Munk viscosity gave \autoref{fig:sverdrup_vs_munk}. One can observe that the Munk theoretical results now include the western boundary current, in both the numerical and theoretical solution. Thus, the numerical solutions agrees better with the theoretical, compared to the Sverdrup solution. The largest distinction is the steady state convergence of the Munk viscosity, which does not occur for the Sverdrup solution. Observing the instantaneous relative error one can see a convergence towards lower errors for the Munk solution, while the same cannot be said for the Sverdrup solution. One thus needs to time average the Sverdrup result to obtain good values. One can observe that the time-averaged Sverdrup solution gives similar accuracy to the instantaneous Munk solution. However, to make a fair compression between the two models, the Munk solution was also time averaged.
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[height=0.6\textwidth]{../../plots/sverdrup_vs_munk.png}
+    \caption{Streamfunction for the Laplace-viscous $\beta$-plane configuration. This figure shows the effect of the Munk friction, compared to the Sverdrup theory without friction. The red lines are the theoretical Sverdrup and Munk solutions respectively.}
+    \label{fig:sverdrup_vs_munk}
+\end{figure}
+
+
+Munk theory gave \autoref{fig:munk_a}. Increasing the viscosity coefficient $A$ can be seen to do two major things: increasing the speed of the western boundary current and moving the western boundary current further away from the western boundary. The western boundary current is moved away from the boundary since this thickens the Munk layer $\delta_M$, which can be observed in the figure. Compared to the Sverdrup solution one observes better result, especially for the western boundary current.
+
+\begin{figure}[H]
+    \centering    
+    \includegraphics[height=0.6\textwidth]{../../plots/munk_a.png}
+    \caption{Streamfunction fields for different values of the meridional viscosity coefficient $A$, compared to Munk theory. The contours show the model result, while the solid red lines showcases the theory. The resolution of the Munk depth is $\tfrac{\delta_M}{\Delta x}=[3.8, \ 4.9, \ 8.4]$, from left to right in the figure. The center domain zonal cross-sections show solid lines for the numerical model, while dashed lines represent Munk theory. The meridional wind velocity has again been transformed into an Ekman-layer velocity, by assuming an Ekman depth of $\delta_\text{EK}=\SI{50}{\meter}$. The meridional velocity is thus the corresponding mass flux as if the domain is at rest and only the Ekman layer is moving. The time-averaging was done between two days and two weeks.}
+    \label{fig:munk_a}
+\end{figure}
+
+
