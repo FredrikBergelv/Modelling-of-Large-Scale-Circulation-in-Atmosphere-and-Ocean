@@ -1,7 +1,7 @@
 &ngrid
 !!
-Nx = 400                 ! Number of x T points
-Ny = 400                 ! Number of y T points
+Nx = 600                 ! Number of x T points
+Ny = 600                 ! Number of y T points
 !!
 Lx = 7.E6                ! Width of domain in x [m]  1.e6 = 1000 km
 Ly = 7.E6                ! Width of domain in y [m]  1.e6 = 1000 km
