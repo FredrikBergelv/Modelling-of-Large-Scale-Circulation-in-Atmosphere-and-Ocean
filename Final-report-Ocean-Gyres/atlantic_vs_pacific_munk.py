@@ -55,6 +55,25 @@ def sverdrup(x, y, u10, Lx, Nx=None):
     return -psi / 1e6
 
 
+def munk(x, y, A, Lx, Nx=None, u10=5):
+
+    psi_s = sverdrup(x, y, u10=u10, Lx=Lx, Nx=Nx)
+
+    dm = (A / beta) ** (1 / 3)
+
+    factor_x = (
+        1
+        - np.exp(-x / (2 * dm))
+        * (
+            np.cos(x * np.sqrt(3) / (2 * dm))
+            + (1 / np.sqrt(3))
+            * np.sin(x * np.sqrt(3) / (2 * dm))
+        )
+    )
+
+    return psi_s * factor_x[None, :]
+
+
 # ==========================================================
 # MODEL STREAMFUNCTION
 # ==========================================================
@@ -73,32 +92,22 @@ def compute_streamfunction(folder, time_start):
 
     dx = x[1] - x[0]
 
-    # --------------------------------------------------
-    # TIME SERIES STREAMFUNCTION (before averaging)
-    # --------------------------------------------------
     psi_all = -np.cumsum(
         (v.values * D * dx)[:, :, ::-1],
         axis=2
-    )[:, :, ::-1]   # shape: (time, y, x)
+    )[:, :, ::-1]
 
-    # --------------------------------------------------
-    # STATISTICS
-    # --------------------------------------------------
     psi_mean = np.mean(psi_all, axis=0)
     psi_std  = np.std(psi_all, axis=0)
 
     v_mean = np.mean(v.values, axis=0)
     v_std  = np.std(v.values, axis=0)
 
-    # --------------------------------------------------
-    # GRID FIX
-    # --------------------------------------------------
     if psi_mean.shape[0] != len(y):
         y_plot = np.linspace(y[0], y[-1], psi_mean.shape[0])
     else:
         y_plot = y
 
-    print("Atlantic vs. Pacific: max v = ", np.max(v_mean))
     return x, y_plot, psi_mean / 1e6, psi_std / 1e6, v_mean, v_std
 
 
@@ -111,15 +120,16 @@ def extract_centerline(y, field):
 
 
 # ==========================================================
-# MERGED PLOT FUNCTION (3 rows: contourf + psi + v)
+# MERGED PLOT FUNCTION
 # ==========================================================
 def plot_domain_compare_merged(
     folders,
     labels,
     Lx_values,
     Nx_values,
-    Lx_ref=7e6,
+    A=1e5,
     u10_value=5,
+    Lx_ref=7e6,
     save_name="domain_compare_merged",
     time_start=2*24,
     show=False
@@ -127,7 +137,6 @@ def plot_domain_compare_merged(
 
     n = len(folders)
 
-    # Width ratios: proportional to Lx
     width_ratios = [Lx / Lx_ref for Lx in Lx_values]
 
     fig = plt.figure(figsize=(sum(width_ratios) * 3.7, 7))
@@ -146,14 +155,14 @@ def plot_domain_compare_merged(
     # ======================================================
     # STORAGE
     # ======================================================
-    model_profiles = []
-    model_stds = []
-    theory_profiles = []
-    model_v_profiles = []
-    model_v_stds = []
+    model_profiles    = []
+    model_stds        = []
+    theory_profiles   = []
+    model_v_profiles  = []
+    model_v_stds      = []
     theory_v_profiles = []
-    contour_data = []
-    x_profiles = []
+    contour_data      = []
+    x_profiles        = []
 
     # ======================================================
     # LOAD DATA
@@ -177,11 +186,12 @@ def plot_domain_compare_merged(
         model_v_std = extract_centerline(y, v_std)
         model_v_stds.append(Ekman_ratio * model_v_std)
 
-        psi_theo = sverdrup(
+        psi_theo = munk(
             x, y,
-            u10=u10_value,
+            A=A,
             Lx=Lx_values[i],
-            Nx=Nx_values[i]
+            Nx=Nx_values[i],
+            u10=u10_value
         )
 
         theory_profile = extract_centerline(y, psi_theo)
@@ -191,24 +201,20 @@ def plot_domain_compare_merged(
         theory_v_profiles.append(Ekman_ratio * theory_v)
 
     # ======================================================
-    # CONTOURF COLOR RANGE (row 0)
+    # CONTOURF COLOR RANGE
     # ======================================================
-    vmin = np.min([d[2].min() for d in contour_data])
-    vmax = np.max([d[2].max() for d in contour_data])
-
-    
     c_levels = [0, 2, 4, 6, 8, 10, 12, 14, 16]
-    vmin=min(c_levels)
-    vmax=max(c_levels)
+    vmin = min(c_levels)
+    vmax = max(c_levels)
 
     # ======================================================
-    # CROSS-SECTION LIMITS (rows 1 & 2)
+    # CROSS-SECTION LIMITS
     # ======================================================
     psi_all = np.concatenate(model_profiles + theory_profiles)
-    v_all = np.concatenate(model_v_profiles + theory_v_profiles)
+    v_all   = np.concatenate(model_v_profiles + theory_v_profiles)
 
     psi_min, psi_max = psi_all.min(), psi_all.max()
-    v_min, v_max = v_all.min(), v_all.max()
+    v_min,   v_max   = v_all.min(),   v_all.max()
 
     # ======================================================
     # PLOTTING
@@ -218,11 +224,7 @@ def plot_domain_compare_merged(
         ax_contour = axes[0, i]
         ax_psi     = axes[1, i]
         ax_v       = axes[2, i]
-        
-        ax_contour = axes[0, i]
-        ax_psi     = axes[1, i]
-        ax_v       = axes[2, i]
-        
+
         if i != 0:
             ax_contour.tick_params(axis="y", labelleft=False)
             ax_psi.tick_params(axis="y", labelleft=False)
@@ -231,8 +233,6 @@ def plot_domain_compare_merged(
         ax_psi.tick_params(axis="x", labelbottom=False)
 
         x, y, psi = contour_data[i]
-
-        # Normalise x by Lx_ref so Pacific runs 0→2
         x_plot = x / Lx_ref
         y_plot = y / Ly_default
 
@@ -244,14 +244,15 @@ def plot_domain_compare_merged(
             cmap="cmo.haline",
             levels=c_levels,
             vmin=vmin,
-            vmax=vmax,
+            vmax=vmax
         )
 
-        psi_theo_2d = sverdrup(
+        psi_theo_2d = munk(
             x, y,
-            u10=u10_value,
+            A=A,
             Lx=Lx_values[i],
-            Nx=Nx_values[i]
+            Nx=Nx_values[i],
+            u10=u10_value
         )
 
         cs = ax_contour.contour(
@@ -291,7 +292,6 @@ def plot_domain_compare_merged(
         ax_psi.set_ylim(psi_min, 22)
         ax_psi.grid(alpha=0.3)
 
-
         # --------------------------------------------------
         # ROW 2: V CROSS-SECTION
         # --------------------------------------------------
@@ -303,9 +303,13 @@ def plot_domain_compare_merged(
             model_v_profiles[i] + model_v_stds[i],
             color="C1", alpha=0.3, label="Model ±1 std"
         )
-        ax_v.set_ylim(v_min, 9)        
+        delta_M = (A / beta) ** (1/3)
+        
+        ax_v.axvline(delta_M/Lx_ref, color="C3", linestyle=":", label=r"$x=\delta_M$")
+        ax_v.set_ylim(v_min, 1)
         ax_v.grid(alpha=0.3)
         ax_v.set_xlabel(r"Latitude, $x/L_{x_{ref}}$ [-]")
+
         if i == 1:
             ax_v.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0])
 
@@ -316,7 +320,7 @@ def plot_domain_compare_merged(
     axes[2, 0].set_ylabel(r"Meridional Ekman velocity, $v$ [m/s]")
 
     # ======================================================
-    # COLORBAR FOR ROW 0
+    # COLORBAR
     # ======================================================
     cbar = fig.colorbar(
         cf,
@@ -334,11 +338,9 @@ def plot_domain_compare_merged(
     axes[1, -1].legend(loc="upper right")
 
     plt.suptitle("Ocean Gyres Streamfunction", size=16)
-
     fig.set_constrained_layout(True)
 
     plt.savefig(f"plots/{save_name}.png", dpi=300, bbox_inches="tight")
-
     print(f"Saved as {save_name}")
 
     if show:
@@ -350,8 +352,8 @@ def plot_domain_compare_merged(
 # ==========================================================
 plot_domain_compare_merged(
     folders=[
-        "no_drag_intermediate_u10",
-        "no_drag_beta_plane_large_domain"
+        "drag_intermediate",
+        "drag_intermediate_large_domain"
     ],
     labels=[
         "North Atlantic",
@@ -359,9 +361,10 @@ plot_domain_compare_merged(
     ],
     Lx_values=[7e6, 14e6],
     Nx_values=[200, 400],
-    Lx_ref=7e6,
+    A=1e5,
     u10_value=5,
-    save_name="atlantic_vs_pacific",
+    Lx_ref=7e6,
+    save_name="atlantic_vs_pacific_munk",
     time_start=2 * 24,
     show=False
 )
