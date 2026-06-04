@@ -1,12 +1,12 @@
 \section{Introduction}
-Due to the Hadley cells together with the Coriolis effect, tradewinds and westerlies dominate the winds over the North Atlantic \citep{Hartmann2016}. These winds drive a converging Ekman transport, which is stronger in the North due to the lateral dependence on the Coriolis force \citep{Ekman1905}. This imbalance is known as the Sverdrup circulation \citep{Sverdrup1947}, and dominates most extratropical oceans. 
+Due to the Hadley cells together with the Coriolis effect, tradewinds and westerlies dominate the winds over the North Atlantic \citep{Hartmann2016}. These winds drive a converging Ekman transport, which is stronger in the North due to the lateral dependence on the Coriolis force \citep{Ekman1905}. This imbalance forces a net southward flow and is known as the Sverdrup circulation \citep{Sverdrup1947}, and dominates most extratropical oceans. 
 
-\citet{Stommel1948} further developed the solution, by introducing drag which gave return flow on the western boundary. The western boundary current was later further developed by \citet{Munk1950}, who assumed a viscous fluid. In this report, the Sverdrup and Munk solutions will be examined by using a set of shallow water equations with a Fortran code. This will give insight into the wo ocean gyre theories and how a numerical model handles their approximations. 
+\citet{Stommel1948} further developed the solution, by introducing drag which gave return flow on the western boundary. The western boundary current was further developed by \citet{Munk1950}, who assumed a viscous fluid. In this report, the Sverdrup and Munk solutions will be examined by using a set of linear shallow water equations with a Fortran code. This will give insight into the two ocean gyre theories and how a numerical model handles them respectively. 
 
 \section{Theory}
 One can approximate the wind stress in the North Atlantic with 
 \begin{equation}
-    \tau=\rho_\text{air}C_DU_{10}^2\,\sin\left(\frac{\pi y}{L_y}\right),
+    \vec{\tau}=\tau_x=\rho_\text{air}C_DU_{10}^2\,\sin\left(\frac{\pi y}{L_y}\right),
     \label{eq:stress}
 \end{equation}
 where $\rho_\text{air}$ is the air density, $C_D$ is the drag coefficient, $U_{10}$ is the ten meter wind speed, and $L_y$ is the lateral extent of the basin. The sinusoidal dependence represents easterly trade winds in the southern part of the North Atlantic and westerlies in the northern part. 
@@ -16,7 +16,7 @@ In order to study Sverdrup circulation one needs to make assumptions: One needs 
 \begin{equation}
     f \approx f_0 + \beta y,
 \end{equation} 
-and an inviscid fluid on a flat bottom. One also needs the ocean to be laterally bounded, for example by two continents on either side \citep{Vallis06}. One also assumes a barotropic ocean. This is however not completely true, since we also assume an Ekman layer with Ekman transport, but since the size of this layer is much smaller than the domain, it is sufficient to say that the ocean is barotropic. The barotropic streamfunction is defined as 
+an inviscid fluid and a flat bottom. One also needs the ocean to be laterally bounded, for example by two continents on either side \citep{Vallis06}. One also assumes a barotropic ocean. This is however not completely true, since an Ekman layer with Ekman transport is assumed, but since the size of this layer is much smaller than the domain, it is sufficient to say that the ocean is barotropic. The barotropic streamfunction is defined as 
 \begin{equation}
     \frac{\partial \Psi}{\partial x}=vH, \quad \frac{\partial \Psi}{\partial 
     y}=-uH,
@@ -32,10 +32,10 @@ One can thus derive the Sverdrup solution, by assuming $\Psi(x_\text{East}y)=0$,
     &\implies \Psi(x,y) = -\frac{1}{\rho\beta}\int_x^{x_\text{East}} \left(\nabla\times\vec{\tau}\right) \, dx,
     \label{eq:theory}
 \end{align}
-The Sverdrup solution thus gives a net southward flow in the center of the domain. We will thus see a "parabolic-like" structure along the longitudinal direction, with the decreasing values towards the East. The western boundary will however have zero flux, and the streamlines will not be closed.
+The Sverdrup solution thus gives a net southward flow in the center of the domain.The solution is a "parabolic-like" structure along the longitudinal direction, with the decreasing values towards the East. The western boundary will however not have return flow, and the streamlines will not be closed.
 
 \subsection{Munk Theory}
-In traditional Munk theory one also add meridional harmonic Newtonian viscosity to the shallow water equations. The viscosity is diffusive, which agrees with the fact that the ocean is turbulent and has an effective viscosity \citep{Vallis06}. The reason for only assuming meridional viscosity, is that this was the only net velocity in the Sverdrup solution. By assuming that the solution is bounded by the domain, $\Psi(x_\text{East})=\Psi(x_\text{West})=0$, one obtains
+In Munk theory a meridional harmonic Newtonian viscosity to the linear shallow water equations is added. The viscosity is diffusive, which agrees with the fact that the ocean is turbulent and thus has an effective viscosity \citep{Vallis06}. The reason for only assuming meridional viscosity, is that this is the only net velocity in the Sverdrup solution. By assuming that the solution is bounded by the domain, $\Psi(x_\text{East})=\Psi(x_\text{West})=0$, one obtains
 \begin{align}
     &A\nabla^4 \Psi -\beta \frac{\partial \Psi}{\partial x} = \frac{1}{\rho}\nabla\times\vec{\tau} \implies \\
     \Psi(x,y)=\Psi_\text{Sverdrup}(x,y)&\left(1-e^{-\frac{x-x_\text{West}}{2\delta_m}}\left[\cos\left(\sqrt{3}\frac{x-x_\text{West}}{2\delta_m}\right)+\frac{1}{\sqrt{3}}\sin\left(\sqrt{3}\frac{x-x_\text{West}}{2\delta_m}\right)\right]\right),
@@ -44,6 +44,6 @@ where $\delta_M$ is the Munk layer defined as
 \begin{equation}
     \delta_M\equiv\left(\frac{A}{\beta}\right)^{\tfrac{1}{3}}.
 \end{equation}
-The Munk layer is the distance from the boundary to the latitude of largest northward meridional velocity. One thus assumes that the interior should behave as the Sverdrup solution. Due to the non-linearity of the Munk theory will also affect the shape of the theoretical solution. This will yield closed streamlines at the western boundary, with a western boundary current at the distance $\delta_M$ from the western boundary. However the Sverdrup interior solution will remain. 
+The Munk layer is the distance from the boundary, where the new frictional Munk term dominates over the Sverdrup term. One thus assumes that the interior should behave as the Sverdrup solution. Due to its higher order the Munk theory will exhibit another shape. This will yield closed streamlines at the western boundary, with a western boundary current at the distance $\delta_M$ from the western boundary, since the Munk term opposes the sign of the Sverdrup term. However the Sverdrup interior solution will remain. 
 
 
